@@ -1,0 +1,19 @@
+﻿@model List<ChatRoom>
+
+
+@if (Model.Any())
+{
+    foreach (var room in Model)
+    {
+        <a class="btn btn-primary" asp-controller="Chat" asp-action="DisplayChatRoom" asp-route-roomName="@room.RoomName">@room.RoomName</a>
+    }
+}
+else
+{
+    <h3>No rooms available</h3>
+}
+
+<form asp-controller="Chat" asp-action="CreateRoom">
+    <input type="text" name="roomName" placeholder="Room Name" />
+    <button type="submit">Create New Room</button>
+</form>

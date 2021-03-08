@@ -1,0 +1,24 @@
+﻿@model ChatRoom
+
+<h5 id="roomName">@Model.RoomName</h5>
+<h4 id="username">Logged as: @User.Identity.Name</h4>
+
+@*<textarea name="message" id="message"></textarea>
+<input type="button" id="groupSendButton" value="Send Message" />*@
+
+<div id="messages">
+    @foreach (var message in Model.Messages)
+    {
+        <div class="message">
+            <header>@message.SendTime</header>
+            <p><span>@message.Sender: </span>@message.Text</p>
+        </div>
+    }
+</div>
+
+<div class="chat-input">
+    @*<textarea name="message" id="message"></textarea>*@
+    <input type="text" id="message" name="message" />
+    <button type="button" id="groupSendButton">Send Message</button>
+    @*<input type="button" id="groupSendButton" value="Send Message" />*@
+</div>

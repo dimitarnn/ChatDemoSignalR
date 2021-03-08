@@ -1,0 +1,24 @@
+﻿@model List<ChatRoom>
+
+<h2>Room: <span id="roomNameSpan">All</span></h2>
+
+@if (Model.Any())
+{
+    <h3>Click on the room name to join!</h3>
+    foreach (var room in Model)
+    {
+        @*<a id="joinRoomLink" asp-controller="Chat" asp-action="JoinRoom" asp-route-roomName="@room.RoomName">@room.RoomName</a>*@
+        <a class="joinRoomLink btn btn-secondary">@room.RoomName</a>
+    }
+}
+
+<form asp-controller="Chat" asp-action="CreateRoom">
+    <input type="text" name="roomName" placeholder="Room Name" />
+    <button type="submit">Create New Room</button>
+</form>
+
+<hr />
+
+<textarea name="message" id="message"></textarea>
+<input type="button" id="sendMessage" value="Send Message" />
+<div id="messages"></div>
