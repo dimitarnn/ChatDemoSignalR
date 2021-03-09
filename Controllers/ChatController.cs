@@ -49,6 +49,18 @@ namespace ChatDemoSignalR.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateRoom(string roomName)
         {
+            /*
+             *  validation
+             */
+
+            if (roomName == null || roomName.Length == 0)
+                return RedirectToAction("DisplayRooms");
+
+            var result = await _context.ChatRooms.SingleOrDefaultAsync(x => x.RoomName == roomName);
+
+            if (result != null)
+                return RedirectToAction("DisplayRooms");
+
             var chatRoom = new ChatRoom
             {
                 RoomName = roomName
