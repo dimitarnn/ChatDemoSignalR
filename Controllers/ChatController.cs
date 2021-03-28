@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using ChatDemoSignalR.Data;
 using ChatDemoSignalR.Hubs;
 using ChatDemoSignalR.Models;
+using ChatDemoSignalR.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -32,6 +33,29 @@ namespace ChatDemoSignalR.Controllers
             _signInManager = signInManager;
             _userManager = userManager;
 
+        }
+
+        public string EncryptCeaser(string plaintext, int offset)
+        {
+            string ciphertext = "";
+
+            foreach (char c in plaintext)
+            {
+                if (Char.IsLower(c))
+                {
+                    ciphertext += (char)('a' + ((c - 'a') + offset + 26) % 26);
+                }
+                else if (Char.IsUpper(c))
+                {
+                    ciphertext += (char)('A' + ((c - 'A') + offset + 26) % 26);
+                }
+                else
+                {
+                    ciphertext += c;
+                }
+            }
+
+            return ciphertext;
         }
 
         public IActionResult Index()
@@ -72,8 +96,50 @@ namespace ChatDemoSignalR.Controllers
             return RedirectToAction("DisplayRooms", "Chat");
         }
 
+        [Authorize]
+        public async Task<IActionResult> PersonalPage()
+        {
+            var userId = _userManager.GetUserId(User);
+            //var user = await _userManager.GetUserAsync(User);
+            var test_user = await _context.Users.SingleOrDefaultAsync(x => x.UserName == User.Identity.Name);
+            var user = await _context.Users.SingleOrDefaultAsync(x => x.UserName == User.Identity.Name);
+            var messages_list = _context.Messages.Where(x => x.UserId == userId).ToList();
+
+            List<Message> messages = messages_list;// = user.Messages.ToList();
+            List<User> users = _context.Users.Where(x => x.Email != user.Email).ToList();
+
+            var model = new PersonalPageVM { Messages = messages, Users = users};
+
+            return View(model);
+        }
+
+        public async Task<IActionResult> SendMessageToUser(string text, string target)
+        {
+            var user = await _userManager.GetUserAsync(User);
+
+            if (user == null)
+                return NotFound("Could not find sender"); /// parameter ?
+
+            var userName = user.UserName;
+            var receiver = await _context.Users.SingleOrDefaultAsync(x => x.UserName == target);
+
+            if (receiver == null)
+                return NotFound("Coulld not find target"); /// parameter ?
+
+            var message = new Message { Text = text, Sender = userName, SendTime = DateTime.Now, UserId = receiver.Id };
+            //var message = new Message { Text = text, Sender = userName, SendTime = DateTime.Now };
+
+            _context.Messages.Add(message);
+            //receiver.Messages.Add(message);
+            await _context.SaveChangesAsync();
+
+            var allMessages = _context.Messages.ToList();
+
+            return Ok(message);
+        }
+
         public async Task<IActionResult> SendMessage(string text, string roomName)
-         {
+        {
             var userName = User.Identity.Name;
             var userId = _userManager.GetUserId(User);
             var user = await _userManager.FindByIdAsync(userId);
@@ -84,14 +150,24 @@ namespace ChatDemoSignalR.Controllers
                 sender = user.UserName;
             }
 
+            /// encrypt message
+            //text = EncryptCeaser(text, 1);
+
             var message = new Message { Text = text, Sender = sender, SendTime = DateTime.Now };
             var chatRoom = _context.ChatRooms.SingleOrDefault(x => x.RoomName == roomName);
 
             if (chatRoom != null)
             {
+                if (chatRoom.Messages == null)
+                {
+                    chatRoom.Messages = new List<Message>();
+                }
+                
                 chatRoom.Messages.Add(message);
                 await _context.SaveChangesAsync();
             }
+
+            //var allMessages = _context.Messages.ToList();
 
             return Ok(message);
         }

@@ -9,6 +9,11 @@ namespace ChatDemoSignalR.Models
 {
     public class User : IdentityUser
     {
+        public User()
+        {
+            Messages = new List<Message>();
+        }
+
         [Required]
         [Display(Name = "First Name")]
         public string FirstName { get; set; }
@@ -16,5 +21,7 @@ namespace ChatDemoSignalR.Models
         [Required]
         [Display(Name = "Last Name")]
         public string LastName { get; set; }
+
+        public ICollection<Message> Messages;
     }
 }

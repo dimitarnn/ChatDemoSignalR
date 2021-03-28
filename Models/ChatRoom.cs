@@ -12,7 +12,7 @@ namespace ChatDemoSignalR.Models
             Users = new List<User>();
             Messages = new List<Message>();
         }
-        
+
         public int Id { get; set; }
 
         public string RoomName { get; set; }

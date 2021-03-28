@@ -1,0 +1,57 @@
+﻿@model PersonalPageVM
+@{
+    Layout = "";
+}
+
+<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+<link rel="stylesheet" href="~/css/site.css" />
+<link rel="stylesheet" href="~/css/chat.css" />
+
+
+<body>
+    <a asp-controller="home" asp-action="index" class="btn btn-secondary">Go back</a>
+    <h5 id="roomName">@User.Identity.Name's Message Board</h5>
+    <h4 id="username">Logged as: @User.Identity.Name</h4>
+
+    <div class="container">
+        <main role="main" class="pb-3">
+            <div id="messages">
+                @foreach (var message in Model.Messages)
+                {
+                    <div class="message">
+                        <header>@message.SendTime</header>
+                        <p>
+                            <span class="sender" style="@(message.Sender == User.Identity.Name ? "color: #e053b3;" : "")">@message.Sender: </span>
+                            <span class="text">@message.Text</span>
+                        </p>
+                    </div>
+                }
+            </div>
+
+            <select id="users">
+                <option>@User.Identity.Name</option>
+                @if (Model.Users.Count > 0)
+                {
+                    foreach (var user in Model.Users)
+                    {
+                        <option value="@user.UserName">@user.UserName</option>
+                    }
+                }
+            </select>
+
+            <div class="chat-input">
+                @*<div class="form-group" style="display: flex;">
+                    <label class="control-label">Choose a key: </label>
+                    <input id="key" type="text" value="1" />
+                </div>*@
+                <input type="text" id="message" name="message" />
+                <button type="button" id="sendButton">Send Message</button>
+            </div>
+        </main>
+    </div>
+</body>
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/js/site.js" asp-append-version="true"></script>
+<script src="~/lib/microsoft/signalr/dist/browser/signalr.js"></script>
+<script src="~/js/personalPage.js"></script>

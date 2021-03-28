@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ChatDemoSignalR.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20210204064340_InitialCreate")]
+    [Migration("20210327150337_InitialCreate")]
     partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -27,6 +27,9 @@ namespace ChatDemoSignalR.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .UseIdentityColumn();
+
+                    b.Property<string>("RoomName")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -52,9 +55,14 @@ namespace ChatDemoSignalR.Migrations
                     b.Property<string>("Text")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ChatRoomId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Messages");
                 });
@@ -270,9 +278,17 @@ namespace ChatDemoSignalR.Migrations
 
             modelBuilder.Entity("ChatDemoSignalR.Models.Message", b =>
                 {
-                    b.HasOne("ChatDemoSignalR.Models.ChatRoom", null)
+                    b.HasOne("ChatDemoSignalR.Models.ChatRoom", "ChatRoom")
                         .WithMany("Messages")
                         .HasForeignKey("ChatRoomId");
+
+                    b.HasOne("ChatDemoSignalR.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("ChatRoom");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ChatDemoSignalR.Models.User", b =>

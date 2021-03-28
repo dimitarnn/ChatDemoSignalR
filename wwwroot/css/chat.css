@@ -1,5 +1,5 @@
 ﻿#messages {
-    height: 70vh;
+    height: 63vh;
     display: flex;
     flex-direction: column;
     /*    justify-content: flex-end;*/
@@ -23,7 +23,7 @@
         text-align: center;
     }
 
-    .message span {
+    .message .sender {
         font-weight: bold;
         min-width: 120px;
         /*word-wrap: break-word;*/
@@ -31,7 +31,7 @@
         text-align: right;
     }
 
-    .message > p {
+    .message > p .text {
         margin: 0;
         width: auto;
         word-wrap: break-word;

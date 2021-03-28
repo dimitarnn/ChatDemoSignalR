@@ -2,6 +2,13 @@
 
 <h5 id="roomName">@Model.RoomName</h5>
 <h4 id="username">Logged as: @User.Identity.Name</h4>
+<div id="user" hidden>@User.Identity.Name</div>
+<form>
+    <div class="form-group" style="display: flex;">
+        <label class="control-label">Choose a cypher: </label>
+        <input id="cypher" type="text" value="1"/>
+    </div>
+</form>
 
 @*<textarea name="message" id="message"></textarea>
 <input type="button" id="groupSendButton" value="Send Message" />*@
@@ -9,16 +16,30 @@
 <div id="messages">
     @foreach (var message in Model.Messages)
     {
-        <div class="message">
-            <header>@message.SendTime</header>
-            <p><span>@message.Sender: </span>@message.Text</p>
-        </div>
+
+        @if (message.Sender == User.Identity.Name)
+        {
+            <div class="message">
+                <header>@message.SendTime</header>
+                <p><span class="sender" style="color: #e053b3">@message.Sender: </span><span class="text">@message.Text</span></p>
+            </div>
+        }
+        else
+        {
+            <div class="message">
+                <header>@message.SendTime</header>
+                <p><span class="sender">@message.Sender: </span><span class="text">@message.Text</span></p>
+            </div>
+        }
     }
 </div>
 
 <div class="chat-input">
-    @*<textarea name="message" id="message"></textarea>*@
+    <div class="form-group" style="display: flex;">
+        <label class="control-label">Choose a key: </label>
+        <input id="key" type="text" value="1" />
+    </div>
     <input type="text" id="message" name="message" />
     <button type="button" id="groupSendButton">Send Message</button>
-    @*<input type="button" id="groupSendButton" value="Send Message" />*@
 </div>
+

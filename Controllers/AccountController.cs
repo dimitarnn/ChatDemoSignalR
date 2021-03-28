@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ChatDemoSignalR.Hubs;
 using ChatDemoSignalR.Models;
 using ChatDemoSignalR.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 
 namespace ChatDemoSignalR.Controllers
 {
@@ -13,11 +15,15 @@ namespace ChatDemoSignalR.Controllers
     {
         private readonly SignInManager<User> _signInManager;
         private readonly UserManager<User> _userManager;
+        private readonly IHubContext<MessageHub> _chat;
         
-        public AccountController(SignInManager<User> signInManager, UserManager<User> userManager)
+        public AccountController(SignInManager<User> signInManager,
+            UserManager<User> userManager,
+            IHubContext<MessageHub> chat)
         {
             _signInManager = signInManager;
             _userManager = userManager;
+            _chat = chat;
         }
 
         [HttpGet]

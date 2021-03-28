@@ -14,5 +14,18 @@ namespace ChatDemoSignalR.Models
         public string Text { get; set; }
 
         public DateTime SendTime { get; set; }
+
+#nullable enable
+
+        public string? UserId { get; set; }
+
+        //public User? User { get; set; }
+
+        public int? ChatRoomId { get; set; }
+
+        //public ChatRoom? ChatRoom { get; set; }
+
+#nullable disable
+
     }
 }

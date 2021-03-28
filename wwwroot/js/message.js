@@ -4,53 +4,113 @@ var connection = new signalR.HubConnectionBuilder()
     .withUrl("/messages")
     .build();
 
-connection.on('ReceiveMessage', function (message) {
-    console.log('Message received: ' + message);
-    var text = message.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+var last = 1;
+
+function EncryptCeaser(ciphertext, offset) {
+    var plaintext = '';
+    var code_a = 'a'.charCodeAt(0);
+    var code_A = 'A'.charCodeAt(0);
+    const regex_a = new RegExp('[a-z]');
+    const regex_A = new RegExp('[A-Z]');
+
+    offset = parseInt(offset) % 26;
+
+    for (var i = 0; i < ciphertext.length; ++i) {
+        if (regex_a.test(ciphertext[i])) {
+            var code = ciphertext.charCodeAt(i);
+            var tmp = String.fromCharCode(code_a + (code - code_a + offset + 26) % 26);
+            plaintext += tmp;
+        }
+        else if (regex_A.test(ciphertext[i])) {
+            var code = ciphertext.charCodeAt(i);
+            var tmp = String.fromCharCode(code_A + (code - code_A + offset + 26) % 26);
+            plaintext += tmp;
+        }
+        else {
+            plaintext += ciphertext[i];
+        }
+    }
     
-    console.log('message sendTime: ' + message.sendTime);
+    console.log('outputed text: ' + plaintext);
+    return plaintext;
+}
+
+function updateMessages(cypher) {
+    $.each($('.message p .text'), function () {
+        var text = $(this).text();
+        text = EncryptCeaser(text, cypher);
+        $(this).text(text);
+    });
+}
+
+$(document).ready(function () {
+    updateMessages(-last);
+});
+
+$('#cypher').on('change', function () {
+    updateMessages(last);
+    var cypher = parseInt($('#cypher').val());
+    updateMessages(-cypher);
+    last = cypher;
+});
+
+$('#cypher').keypress(function (event) {
+    var keycode = (event.keyCode ? event.keyCode : event.which);
+    if (keycode == 13) {    // check for enter
+        event.preventDefault();
+    }
+});
+
+$('#key').keypress(function (event) {
+    var keycode = (event.keyCode ? event.keyCode : event.which);
+    if (keycode == 13) {
+        event.preventDefault();
+    }
+});
+
+
+connection.on('ReceiveMessage', function (message) {
+
+    var text = message.text;
+    var cypher = $('#cypher').val();
+    text = EncryptCeaser(text, -cypher);
 
     var currentDate = new Date();
     var displayDate = currentDate.getDate() + '.' + (currentDate.getMonth() + 1) + '.' + currentDate.getFullYear();
     displayDate += ' ' + currentDate.getHours() + ':' + currentDate.getMinutes() + ':' + currentDate.getSeconds();
 
-    console.log('so far');
-
     var div = document.createElement('div');
     div.classList.add('message');
-
-    console.log('div created');
 
     var header = document.createElement('header');
     header.appendChild(document.createTextNode(displayDate));
 
-    console.log('header created');
-
     var p = document.createElement('p');
-    var span = document.createElement('span');
+    var spanSender = document.createElement('span');
 
-    console.log('span created');
+    spanSender.classList.add('sender');
+    console.log('>> ' + message.sender + ' - ' + $('#user').text());
+    if (message.sender == $('#user').text()) {
+        spanSender.style.color = '#e053b3';
+    }
+    console.log('Color setted');
+    spanSender.appendChild(document.createTextNode(message.sender + ': '));
 
-    span.appendChild(document.createTextNode(message.sender + ': '));
-    p.appendChild(span);
+    var spanText = document.createElement('span');
 
-    console.log('span appended');
 
-    p.appendChild(document.createTextNode(text));
+    spanText.classList.add('text');
+    spanText.appendChild(document.createTextNode(text));
 
-    console.log('testing message div: ');
+    p.appendChild(spanSender);
+    p.appendChild(spanText);
     
     div.appendChild(header);
     div.appendChild(p);
-    console.log(div);
 
-    //var msg = message.sender + ': ' + text + '  - ' + displayDate;
-
-    //div.innerHTML = msg;
     $('#messages').append(div);
 
     $('#messages').animate({ scrollTop: $('#messages')[0].scrollHeight}, 500);
-    //$('#messages').scrollTop($('#messages')[0].scrollHeight);
 
     $('#message').val('');
 });
@@ -62,6 +122,7 @@ connection.on('UserConnected', function (connectionId) {
     option.text = connectionId;
     option.value = connectionId;
     group.append(option);
+    //connection.invoke('SendMessageToCaller', { text: EncryptCeaser("Welcome to ChatDemo™", 1), sender: "ChatDemo™", sendTime: new Date() });
 });
 
 connection.on('UserDisconnected', function (connectionId) {
@@ -76,13 +137,14 @@ connection.on('UserDisconnected', function (connectionId) {
 
 connection.start().then(function () {
     var roomName = $('#roomName').text();
-    console.log('roomName after start: '+ roomName);
+    //console.log('roomName after start: '+ roomName);
     connection.invoke('JoinGroup', roomName).catch(function (err) {
         return console.error(err.toString());
     });
+    /// animated scroll
     $('#messages').animate({ scrollTop: $('#messages')[0].scrollHeight }, 500);
-}).catch(function (err) {
-    return console.error(err.toString());
+    //}).catch(function (err) {
+    //    return console.error(err.toString());
 });
 
 $('#groupSendButton').on('click', function (event) {
@@ -91,33 +153,37 @@ $('#groupSendButton').on('click', function (event) {
     if (text.length == 0)
         return;
 
+    console.log('text: ' + text);
+    var cypher = $('#key').val();
+    text = EncryptCeaser(text, cypher);
+    console.log('cypher: ' + cypher)
+    console.log('encrypted text: ' + text);
+
     var roomName = $('#roomName').text();
     var message;
     var sender = '';
     var sendTime = '';
 
-    console.log('group send button gets clicked');
-
     var data = { text: text, roomName: roomName };
+    console.log(data);
+
     $.post('/Chat/SendMessage', data)
         .done(function (response) {
-            console.log(response.text + ' - ' + response.sender + ' - ' + response.sendTime);
-            console.log('**7&** ' + typeof (response.sendTime));
-            
             message = { text: text, sender: response.sender, sendTime: response.sendTime };
             sender = response.sender;
             sendTime = response.sendTime;
-            console.log('Called send message: ' + response);
 
-            console.log('to send: ' + text + ' ' + sender + ' ' + sendTime);
+            console.log('response received');
+            console.log(response);
 
             connection.invoke('SendMessageToGroup', roomName, message).catch(function (err) {
                 return console.error(err.toString());
             });
-
+        })
+        .fail(function (response) {
+            console.log('fail');
+            console.log(response);
         });
-
-
 });
 
 $('#sendButton').on('click', function (event) {
