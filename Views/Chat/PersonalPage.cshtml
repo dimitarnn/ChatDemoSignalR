@@ -29,7 +29,8 @@
             </div>
 
             <select id="users">
-                <option>@User.Identity.Name</option>
+                <option value="AllUsers">All Users[Temporary]</option>
+                <option value="@User.Identity.Name">@User.Identity.Name</option>
                 @if (Model.Users.Count > 0)
                 {
                     foreach (var user in Model.Users)
@@ -50,6 +51,11 @@
         </main>
     </div>
 </body>
+
+<script>
+    var userName = @Html.Raw(Json.Serialize(User.Identity.Name));
+</script>
+
 <script src="~/lib/jquery/dist/jquery.min.js"></script>
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="~/js/site.js" asp-append-version="true"></script>

@@ -6,6 +6,18 @@ var connection = new signalR.HubConnectionBuilder()
 
 var last = 1;
 
+connection.start().then(function () {
+    var roomName = $('#roomName').text();
+    //console.log('roomName after start: '+ roomName);
+    connection.invoke('JoinGroup', roomName).catch(function (err) {
+        return console.error(err.toString());
+    });
+    /// animated scroll
+    $('#messages').animate({ scrollTop: $('#messages')[0].scrollHeight }, 500);
+    //}).catch(function (err) {
+    //    return console.error(err.toString());
+});
+
 function EncryptCeaser(ciphertext, offset) {
     var plaintext = '';
     var code_a = 'a'.charCodeAt(0);
@@ -31,7 +43,7 @@ function EncryptCeaser(ciphertext, offset) {
         }
     }
     
-    console.log('outputed text: ' + plaintext);
+    //console.log('outputed text: ' + plaintext);
     return plaintext;
 }
 
@@ -45,6 +57,8 @@ function updateMessages(cypher) {
 
 $(document).ready(function () {
     updateMessages(-last);
+    console.log('ChatRoom Messages:')
+    console.log(window.ChatRoomMessages);
 });
 
 $('#cypher').on('change', function () {
@@ -135,17 +149,7 @@ connection.on('UserDisconnected', function (connectionId) {
     });
 });
 
-connection.start().then(function () {
-    var roomName = $('#roomName').text();
-    //console.log('roomName after start: '+ roomName);
-    connection.invoke('JoinGroup', roomName).catch(function (err) {
-        return console.error(err.toString());
-    });
-    /// animated scroll
-    $('#messages').animate({ scrollTop: $('#messages')[0].scrollHeight }, 500);
-    //}).catch(function (err) {
-    //    return console.error(err.toString());
-});
+
 
 $('#groupSendButton').on('click', function (event) {
     var text = $('#message').val();

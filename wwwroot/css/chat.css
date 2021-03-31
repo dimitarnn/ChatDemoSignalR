@@ -1,9 +1,9 @@
 ﻿#messages {
-    height: 63vh;
+    height: 67vh;
     display: flex;
     flex-direction: column;
     /*    justify-content: flex-end;*/
-    padding-bottom: 1rem;
+    padding-bottom: 3vh;
     overflow: auto;
 }
 
@@ -38,8 +38,7 @@
     }
 
 
-.chat-input {
-    /*background-color: #443554;*/
+/*.chat-input {
     height: 8vh;
     z-index: 25;
     box-shadow: 0 -1px 2px 0 #333;
@@ -54,4 +53,9 @@
 
     .chat-input > button {
         flex-grow: 1;
-    }
+    }*/
+
+#info {
+   /* height: 12vh;
+    padding-bottom: 1rem;*/
+}

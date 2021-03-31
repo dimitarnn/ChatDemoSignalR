@@ -103,13 +103,20 @@ $('#sendButton').on('click', function (event) {
     if (text.length == 0)
         return;
 
-    var target = $('#users option:selected').text();
+    var target = $('#users option:selected').val();
     var text = $('#message').val();
 
     var data = { text: text, target: target };
 
     console.log('data:');
     console.log(data);
+
+    if (target == 'AllUsers') {
+        connection.invoke('SendMessageToAuthorized', { text: text, sender: window.userName, sendTime: new Date() }).catch(function (err) {
+            return console.error(err.toString());
+        });
+        return;
+    }
 
     $.post('/Chat/SendMessageToUser', data)
         .done(function (response) {

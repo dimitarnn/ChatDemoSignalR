@@ -100,12 +100,15 @@ namespace ChatDemoSignalR.Controllers
         public async Task<IActionResult> PersonalPage()
         {
             var userId = _userManager.GetUserId(User);
+            //_userManager.GetUser
             //var user = await _userManager.GetUserAsync(User);
-            var test_user = await _context.Users.SingleOrDefaultAsync(x => x.UserName == User.Identity.Name);
+            //var test_user = await _context.Users.SingleOrDefaultAsync(x => x.UserName == User.Identity.Name);
+
             var user = await _context.Users.SingleOrDefaultAsync(x => x.UserName == User.Identity.Name);
+            //var messagesArr = await _context.Users.Include(x => x.Messages).ToListAsync();
             var messages_list = _context.Messages.Where(x => x.UserId == userId).ToList();
 
-            List<Message> messages = messages_list;// = user.Messages.ToList();
+            List<Message> messages = messages_list;
             List<User> users = _context.Users.Where(x => x.Email != user.Email).ToList();
 
             var model = new PersonalPageVM { Messages = messages, Users = users};

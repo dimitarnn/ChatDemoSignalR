@@ -1,4 +1,5 @@
-﻿using ChatDemoSignalR.Models;
+﻿using ChatDemoSignalR.Helpers;
+using ChatDemoSignalR.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
 using System;
@@ -11,9 +12,17 @@ namespace ChatDemoSignalR.Hubs
     public class MessageHub : Hub
     {
         private readonly UserManager<User> _userManager;
+        private readonly static ConnectionMapping<string> _connections =
+            new ConnectionMapping<string>();
         public MessageHub(UserManager<User> userManager)
         {
             _userManager = userManager;
+        }
+
+        public async Task SendMessageToAuthorized(Message message)
+        {
+            var connections = _connections.GetAllConnections().ToList();
+            await Clients.Clients(connections).SendAsync("ReceiveMessage", message);
         }
         
         public async Task SendMessageToAll(Message message)
@@ -50,14 +59,28 @@ namespace ChatDemoSignalR.Hubs
 
         public override async Task OnConnectedAsync()
         {
+            /// single user groups
             var username = Context.User.Identity.Name;
-            await Groups.AddToGroupAsync(Context.ConnectionId, username);
+            if (username != null)
+            {
+                await Groups.AddToGroupAsync(Context.ConnectionId, username);
+                /// in-memory
+                _connections.Add(username, Context.ConnectionId);
+            }
+
             await Clients.All.SendAsync("UserConnected", Context.ConnectionId);
             await base.OnConnectedAsync();
         }
 
         public override async Task OnDisconnectedAsync(Exception ex)
         {
+            string username = Context.User.Identity.Name;
+
+            if (username != null)
+            {
+                _connections.Remove(username, Context.ConnectionId);
+            }
+
             await Clients.All.SendAsync("UserDisconnected", Context.ConnectionId);
             await base.OnDisconnectedAsync(ex);
         }
