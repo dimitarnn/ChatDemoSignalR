@@ -1,0 +1,49 @@
+﻿@model ChatRoom
+
+@{ 
+    Layout = "_Layout";
+}
+
+<div class="row">
+    <h1>@Model.Users.ElementAt(0) - @Model.Users.ElementAt(1)</h1>
+</div>
+
+<div class="row">
+    <div id="messages">
+        @foreach (var message in Model.Messages)
+        {
+            <div class="message">
+                <header>@message.SendTime</header>
+                <p>
+                    @if (message.Sender == User.Identity.Name)
+                    {
+                        <span class="sender" style="color: #e053b3;">@message.Sender: </span>
+                    }
+                    else
+                    {
+                        <span class="sender">@message.Sender: </span>
+                    }
+                    <span class="text">@message.Text</span>
+                </p>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="chat-input">
+    <div class="input-group mb-3">
+        <textarea id="message" name="message" class="form-control" placeholder="Your Message"></textarea>
+        <div class="input-group-append">
+            <button class="btn btn-outline-secondary" type="button" id="sendButton">Send Message</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    var roomName = @Html.Raw(Json.Serialize(Model.RoomName));
+    console.log(roomName);
+</script>
+
+@section Scripts {
+    <script src="~/js/privateChat.js"></script>
+}

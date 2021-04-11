@@ -1,0 +1,25 @@
+﻿@model List<User>
+
+@{ 
+    Layout = "_Layout";
+}
+
+<h1>Add Friends</h1>
+
+<div class="container">
+    @foreach (var user in Model)
+    {
+        <div class="card">
+            <div class="card-header">
+                @user.UserName
+            </div>
+            <div class="card-body">
+                <form asp-controller="Account" asp-action="AddFriend" asp-route-friendId="@user.Id">
+                    <button class="btn btn-primary" type="submit">
+                        Add Friend
+                    </button>
+                </form>
+            </div>
+        </div>
+    }
+</div>

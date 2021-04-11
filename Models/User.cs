@@ -12,6 +12,11 @@ namespace ChatDemoSignalR.Models
         public User()
         {
             Messages = new List<Message>();
+
+            //Following = new List<UserFriends>();
+            //FollowedBy = new List<UserFriends>();
+
+            //Friends = new List<User>();
         }
 
         [Required]
@@ -22,6 +27,13 @@ namespace ChatDemoSignalR.Models
         [Display(Name = "Last Name")]
         public string LastName { get; set; }
 
-        public ICollection<Message> Messages;
+        public ICollection<Message> Messages { get; set; }
+
+        public ICollection<ChatRoom> ChatRooms { get; set; }
+
+        public ICollection<UserFriends> Following { get; set; }
+
+        public ICollection<UserFriends> FollowedBy { get; set; }
+
     }
 }

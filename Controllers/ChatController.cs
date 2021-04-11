@@ -66,8 +66,42 @@ namespace ChatDemoSignalR.Controllers
 
         public IActionResult DisplayRooms()
         {
-            var rooms = _context.ChatRooms.ToList();
+            var rooms = _context.ChatRooms.Where(x => x.ChatType == ChatType.Room).ToList();
             return View(rooms);
+        }
+
+        [Authorize]
+        public async Task<IActionResult> DisplayAllPrivateChats()
+        {
+            var userId =  _userManager.GetUserId(User);
+            var user = await _context.Users.Include(x => x.Following).SingleOrDefaultAsync(x => x.Id == userId);
+
+            //var user1 = await _context.Users.Include(x => x.Following).ThenInclude(y => y.Friend).SingleOrDefaultAsync(x => x.Id == userId);
+            // possible to include Frinds as User Model
+
+            List<User> friends = new List<User>();
+            foreach (var tmp in user.Following)
+            {
+                var friend = await _context.Users.SingleOrDefaultAsync(x => x.Id == tmp.FriendId);
+                if (friend != null)
+                {
+                    friends.Add(friend);
+                }
+            }
+
+            return View(friends);
+        }
+
+        [Authorize]
+        public async Task<IActionResult> DisplayPrivateChat(string friendId)
+        {
+            var userId = _userManager.GetUserId(User);
+
+            int cmp = String.Compare(userId, friendId);
+            string roomName = (cmp <= 0 ? userId : friendId) + "_" + (cmp <= 0 ? friendId : userId);
+
+            var chatRoom = await _context.ChatRooms.Include(x => x.Users).Include(x => x.Messages).SingleOrDefaultAsync(x => x.RoomName == roomName);
+            return View(chatRoom);
         }
 
         [HttpPost]
@@ -87,7 +121,8 @@ namespace ChatDemoSignalR.Controllers
 
             var chatRoom = new ChatRoom
             {
-                RoomName = roomName
+                RoomName = roomName,
+                ChatType = ChatType.Room
             };
 
             _context.ChatRooms.Add(chatRoom);
@@ -100,15 +135,17 @@ namespace ChatDemoSignalR.Controllers
         public async Task<IActionResult> PersonalPage()
         {
             var userId = _userManager.GetUserId(User);
+
             //_userManager.GetUser
             //var user = await _userManager.GetUserAsync(User);
             //var test_user = await _context.Users.SingleOrDefaultAsync(x => x.UserName == User.Identity.Name);
 
-            var user = await _context.Users.SingleOrDefaultAsync(x => x.UserName == User.Identity.Name);
+            //var user = await _context.Users.SingleOrDefaultAsync(x => x.UserName == User.Identity.Name);
+            var user = await _userManager.GetUserAsync(User);
             //var messagesArr = await _context.Users.Include(x => x.Messages).ToListAsync();
-            var messages_list = _context.Messages.Where(x => x.UserId == userId).ToList();
+            //var messages_list = _context.Messages.Where(x => x.UserId == userId).ToList();
 
-            List<Message> messages = messages_list;
+            List<Message> messages =_context.Messages.Where(x => x.UserId == userId).ToList();
             List<User> users = _context.Users.Where(x => x.Email != user.Email).ToList();
 
             var model = new PersonalPageVM { Messages = messages, Users = users};
@@ -148,7 +185,7 @@ namespace ChatDemoSignalR.Controllers
             var user = await _userManager.FindByIdAsync(userId);
             var sender = "Anonymous";
 
-            if (user != null)
+            if (user != null) /// not needed ?
             {
                 sender = user.UserName;
             }
@@ -193,6 +230,7 @@ namespace ChatDemoSignalR.Controllers
             if (chatRoom != null && !chatRoom.Users.Contains(user))
             {
                 chatRoom.Users.Add(user);
+                await _context.SaveChangesAsync(); /// needed?
             }
 
             return Ok();

@@ -1,20 +1,20 @@
 ﻿'use strict';
 
 var connection = new signalR.HubConnectionBuilder()
-    .withUrl("/messages")
+    .withUrl('/messages')
     .build();
 
 connection.start().then(function () {
-    //connection.invoke('JoinGroup', roomName).catch(function (err) { /// already joined page with own name ?
-    //   return console.error(err.toString());
-    //});
+    connection.invoke('JoinGroup', window.roomName).catch(function (err) {
+        return console.error(err);
+    });
     $('#messages').animate({ scrollTop: $('#messages')[0].scrollHeight }, 500);
 });
 
 connection.on('ReceiveMessage', function (message) {
 
     var text = message.text;
-    var cypher = $('#cypher').val();
+    //var cypher = $('#cypher').val();
     //text = EncryptCeaser(text, -cypher);
     text = message.text;
 
@@ -26,13 +26,13 @@ connection.on('ReceiveMessage', function (message) {
     div.classList.add('message');
 
     var header = document.createElement('header');
-    header.appendChild(document.createTextNode(displayDate));
+    header.appendChild(document.createTextNode(displayDate)); /// displayDate
 
     var p = document.createElement('p');
     var spanSender = document.createElement('span');
 
     spanSender.classList.add('sender');
-    
+
     var username = '';
     $.get('/Home/GetUserName')
         .done(function (response) {
@@ -42,7 +42,7 @@ connection.on('ReceiveMessage', function (message) {
         });
     console.log('message sender ' + message.sender);
 
-    
+
     spanSender.appendChild(document.createTextNode(message.sender + ': '));
 
     var spanText = document.createElement('span');
@@ -103,29 +103,21 @@ $('#sendButton').on('click', function (event) {
     if (text.length == 0)
         return;
 
-    var target = $('#users option:selected').val();
     var text = $('#message').val();
 
-    var data = { text: text, target: target };
+    var data = { text: text, roomName: window.roomName };
 
     console.log('data:');
     console.log(data);
 
-    if (target == 'AllUsers') {
-        connection.invoke('SendMessageToAuthorized', { text: text, sender: window.userName, sendTime: new Date() }).catch(function (err) {
-            return console.error(err.toString());
-        });
-        return;
-    }
-
     console.log('sending .');
 
-    $.post('/Chat/SendMessageToUser', data)
+    $.post('/Chat/SendMessage', data)
         .done(function (response) {
             var message = { text: response.text, sender: response.sender, sendTime: response.sendTime };
-            console.log('received response from controller: ');
-            console.log(response);
-            connection.invoke('SendMessageToUser', target, message).catch(function (err) {
+            //console.log('received response from controller: ');
+            //console.log(response);
+            connection.invoke('SendMessageToGroup', roomName, message).catch(function (err) {
                 return console.error(err.toString());
             });
             //connection.invoke('SendMessageToUser', );

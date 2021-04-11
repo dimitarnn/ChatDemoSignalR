@@ -4,14 +4,16 @@ using ChatDemoSignalR.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace ChatDemoSignalR.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20210408114059_ChangeModels")]
+    partial class ChangeModels
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -316,13 +318,13 @@ namespace ChatDemoSignalR.Migrations
             modelBuilder.Entity("ChatDemoSignalR.Models.UserFriends", b =>
                 {
                     b.HasOne("ChatDemoSignalR.Models.User", "Friend")
-                        .WithMany("FollowedBy")
+                        .WithMany("Following")
                         .HasForeignKey("FriendId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("ChatDemoSignalR.Models.User", "User")
-                        .WithMany("Following")
+                        .WithMany("FollowedBy")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();

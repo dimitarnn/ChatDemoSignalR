@@ -18,9 +18,25 @@ namespace ChatDemoSignalR.Data
 
         public DbSet<ChatRoom> ChatRooms { get; set; }
 
+        public DbSet<UserFriends> UserFriends { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+            builder.Entity<UserFriends>()
+                .HasKey(uf => new { uf.UserId, uf.FriendId });
+
+            builder.Entity<UserFriends>()
+                .HasOne(uf => uf.Friend)
+                .WithMany(fr => fr.FollowedBy)
+                .HasForeignKey(fr => fr.FriendId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<UserFriends>()
+                .HasOne(uf => uf.User)
+                .WithMany(u => u.Following)
+                .HasForeignKey(uf => uf.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

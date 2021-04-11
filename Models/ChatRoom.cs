@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 
 namespace ChatDemoSignalR.Models
 {
+
     public class ChatRoom
     {
         public ChatRoom()
@@ -16,6 +17,8 @@ namespace ChatDemoSignalR.Models
         public int Id { get; set; }
 
         public string RoomName { get; set; }
+
+        public ChatType ChatType { get; set; }
 
         public ICollection<User> Users { get; set; }
 

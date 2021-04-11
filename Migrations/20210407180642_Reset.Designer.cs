@@ -4,14 +4,16 @@ using ChatDemoSignalR.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace ChatDemoSignalR.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20210407180642_Reset")]
+    partial class Reset
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -35,6 +37,26 @@ namespace ChatDemoSignalR.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("ChatRooms");
+                });
+
+            modelBuilder.Entity("ChatDemoSignalR.Models.Friends", b =>
+                {
+                    b.Property<string>("PrimaryUserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("RelatedUserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("RelatedUserId1")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("PrimaryUserId", "RelatedUserId");
+
+                    b.HasIndex("RelatedUserId");
+
+                    b.HasIndex("RelatedUserId1");
+
+                    b.ToTable("Friends");
                 });
 
             modelBuilder.Entity("ChatDemoSignalR.Models.Message", b =>
@@ -139,21 +161,6 @@ namespace ChatDemoSignalR.Migrations
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.ToTable("AspNetUsers");
-                });
-
-            modelBuilder.Entity("ChatDemoSignalR.Models.UserFriends", b =>
-                {
-                    b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("FriendId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("UserId", "FriendId");
-
-                    b.HasIndex("FriendId");
-
-                    b.ToTable("UserFriends");
                 });
 
             modelBuilder.Entity("ChatRoomUser", b =>
@@ -302,6 +309,23 @@ namespace ChatDemoSignalR.Migrations
                     b.ToTable("AspNetUserTokens");
                 });
 
+            modelBuilder.Entity("ChatDemoSignalR.Models.Friends", b =>
+                {
+                    b.HasOne("ChatDemoSignalR.Models.User", "PrimaryUser")
+                        .WithMany("Friends")
+                        .HasForeignKey("RelatedUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ChatDemoSignalR.Models.User", "RelatedUser")
+                        .WithMany()
+                        .HasForeignKey("RelatedUserId1");
+
+                    b.Navigation("PrimaryUser");
+
+                    b.Navigation("RelatedUser");
+                });
+
             modelBuilder.Entity("ChatDemoSignalR.Models.Message", b =>
                 {
                     b.HasOne("ChatDemoSignalR.Models.ChatRoom", null)
@@ -311,25 +335,6 @@ namespace ChatDemoSignalR.Migrations
                     b.HasOne("ChatDemoSignalR.Models.User", null)
                         .WithMany("Messages")
                         .HasForeignKey("UserId");
-                });
-
-            modelBuilder.Entity("ChatDemoSignalR.Models.UserFriends", b =>
-                {
-                    b.HasOne("ChatDemoSignalR.Models.User", "Friend")
-                        .WithMany("FollowedBy")
-                        .HasForeignKey("FriendId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("ChatDemoSignalR.Models.User", "User")
-                        .WithMany("Following")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Friend");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ChatRoomUser", b =>
@@ -405,9 +410,7 @@ namespace ChatDemoSignalR.Migrations
 
             modelBuilder.Entity("ChatDemoSignalR.Models.User", b =>
                 {
-                    b.Navigation("FollowedBy");
-
-                    b.Navigation("Following");
+                    b.Navigation("Friends");
 
                     b.Navigation("Messages");
                 });
