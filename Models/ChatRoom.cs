@@ -22,6 +22,8 @@ namespace ChatDemoSignalR.Models
 
         public ICollection<User> Users { get; set; }
 
+        //public ICollection<ChatRoomUser> ChatRoomUsers { get; set; }
+
         public ICollection<Message> Messages { get; set; }
     }
 }

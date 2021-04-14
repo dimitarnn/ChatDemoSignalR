@@ -69,3 +69,53 @@ body {
   white-space: nowrap;
   line-height: 60px; /* Vertically center the text there */
 }
+
+a.fa-globe {
+    position: relative;
+    font-size: 2em;
+    color: grey;
+    cursor: pointer;
+    margin: 2px;
+}
+
+span.fa-comment {
+    position: absolute;
+    font-size: 0.6em;
+    top: -4px;
+    color: red;
+    right: -4px;
+}
+
+span#notificationCount {
+    position: absolute;
+    font-size: 0.3em;
+    top: 1px;
+    color: #fff;
+    right: 2px;
+}
+
+#notification {
+    text-decoration: none;
+}
+
+.popover-body {
+    /*width: 20vw;*/
+}
+
+.popover-body ul {
+    max-height: 30vh;
+    overflow: auto;
+}
+
+.popover-body ul li {
+    /*color: red;*/
+    cursor: pointer;
+}
+
+li.notification-text {
+    /*color: red;*/
+}
+
+.joinedButton {
+    display: none;
+}

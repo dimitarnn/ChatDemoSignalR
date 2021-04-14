@@ -133,7 +133,7 @@ namespace ChatDemoSignalR.Controllers
         public async Task<IActionResult> AddFriend(string friendId)
         {
             //var user = await _userManager.GetUserAsync(User);
-            var userId =  _userManager.GetUserId(User);
+            var userId =  _userManager.GetUserId(User); 
             var user = _context.Users.Include(x => x.Following).Include(x => x.FollowedBy).SingleOrDefault(x => x.Id == userId);
             var friend = _context.Users.Include(x => x.Following).Include(x => x.FollowedBy).SingleOrDefault(x => x.Id == friendId);
 
@@ -178,13 +178,13 @@ namespace ChatDemoSignalR.Controllers
                 {
                     ChatRoom chat = new ChatRoom
                     {
-                        ChatType = ChatType.Private
+                        ChatType = ChatType.Private,
+                        RoomName = roomName
                     };
 
-
-                    chat.RoomName = roomName;
                     chat.Users.Add(user);
                     chat.Users.Add(friend);
+
 
                     _context.ChatRooms.Add(chat);
                 }

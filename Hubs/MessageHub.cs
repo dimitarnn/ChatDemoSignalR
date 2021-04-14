@@ -1,4 +1,5 @@
-﻿using ChatDemoSignalR.Helpers;
+﻿using ChatDemoSignalR.Data;
+using ChatDemoSignalR.Helpers;
 using ChatDemoSignalR.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
@@ -12,11 +13,33 @@ namespace ChatDemoSignalR.Hubs
     public class MessageHub : Hub
     {
         private readonly UserManager<User> _userManager;
+        private readonly AppDbContext _context;
         private readonly static ConnectionMapping<string> _connections =
             new ConnectionMapping<string>();
-        public MessageHub(UserManager<User> userManager)
+        public MessageHub(UserManager<User> userManager, AppDbContext context)
         {
             _userManager = userManager;
+            _context = context;
+        }
+
+        public async Task SendNotificationToGroup(string group)
+        {
+            var chatRoom = _context.ChatRooms.SingleOrDefault(x => x.RoomName == group);
+            var users = _context.Users.Where(x => x.ChatRooms.Contains(chatRoom)).ToList();
+
+            foreach(var user in users)
+            {
+                var connections = _connections.GetConnections(user.UserName).ToList();
+                if (!connections.Any())
+                    continue;
+                await Clients.Clients(connections).SendAsync("ReceiveNotification");
+            }
+        }
+
+        public async Task SendNotificationToUser(string username)
+        {
+            var connections = _connections.GetConnections(username).ToList();
+            await Clients.Clients(connections).SendAsync("ReceiveNotification");
         }
 
         public async Task SendMessageToAuthorized(Message message)

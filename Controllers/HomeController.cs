@@ -26,6 +26,10 @@ namespace ChatDemoSignalR.Controllers
         public IActionResult GetUserName()
         {
             var username = User.Identity.Name;
+
+            if (username == null)
+                return NotFound();
+
             return Ok(username);
         }
 

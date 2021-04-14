@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using ChatDemoSignalR.Data;
 using ChatDemoSignalR.Hubs;
 using ChatDemoSignalR.Models;
+using ChatDemoSignalR.Repository;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -37,6 +38,8 @@ namespace ChatDemoSignalR
 
             services.AddIdentity<User, IdentityRole>()
                 .AddEntityFrameworkStores<AppDbContext>();
+
+            services.AddTransient<INotificationRepository, NotificationRepository>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

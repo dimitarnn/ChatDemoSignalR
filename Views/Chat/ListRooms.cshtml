@@ -1,0 +1,34 @@
+﻿@model List<ChatRoom>
+
+@{
+    Layout = "_Layout";
+}
+
+<h1>Available rooms to join</h1>
+
+<div class="container">
+    @{
+        int cnt = 0;
+    }
+    @foreach (var room in Model)
+    {
+        <div class="card">
+            <div class="card-header">
+                @room.RoomName
+            </div>
+            <div class="card-body">
+                <!--<form asp-controller="Chat" asp-action="ListRooms">-->
+                    @*<button class="btn btn-primary joinRoomButton" type="submit" data-roomName="@room.RoomName">Join Room</button>*@
+                @*</form>-->*@
+                @*<a class="btn btn-primary" data-roomName="@room.RoomName" onclick="joinRoom(this)" asp-controller="Chat" asp-action="ListRooms">Join Room</a>*@
+                <button type="submit" class="btn btn-primary" data-roomName="@room.RoomName" data-roomId="@room.Id" onclick="joinRoom(this)">Join Room</button>
+                <button id="@room.Id" type="button" class="btn btn-success joinedButton" disabled>Joined</button>
+            </div>
+        </div>
+        ++cnt;
+    }
+</div>
+
+@section Scripts {
+    <script src="~/js/joinRoomScript.js"></script>
+}

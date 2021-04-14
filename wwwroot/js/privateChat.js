@@ -1,15 +1,15 @@
 ﻿'use strict';
 
-var connection = new signalR.HubConnectionBuilder()
-    .withUrl('/messages')
-    .build();
+//var connection = new signalR.HubConnectionBuilder()
+//    .withUrl('/messages')
+//    .build();
 
-connection.start().then(function () {
-    connection.invoke('JoinGroup', window.roomName).catch(function (err) {
-        return console.error(err);
-    });
-    $('#messages').animate({ scrollTop: $('#messages')[0].scrollHeight }, 500);
-});
+//connection.start().then(function () {
+//    connection.invoke('JoinGroup', window.roomName).catch(function (err) {
+//        return console.error(err);
+//    });
+//    $('#messages').animate({ scrollTop: $('#messages')[0].scrollHeight }, 500);
+//});
 
 connection.on('ReceiveMessage', function (message) {
 
@@ -118,6 +118,10 @@ $('#sendButton').on('click', function (event) {
             //console.log('received response from controller: ');
             //console.log(response);
             connection.invoke('SendMessageToGroup', roomName, message).catch(function (err) {
+                return console.error(err.toString());
+            });
+
+            connection.invoke('SendNotificationToGroup', roomName).catch(function (err) {
                 return console.error(err.toString());
             });
             //connection.invoke('SendMessageToUser', );

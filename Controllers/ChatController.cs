@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using ChatDemoSignalR.Data;
 using ChatDemoSignalR.Hubs;
 using ChatDemoSignalR.Models;
+using ChatDemoSignalR.Repository;
 using ChatDemoSignalR.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -22,17 +23,19 @@ namespace ChatDemoSignalR.Controllers
         private readonly AppDbContext _context;
         private readonly SignInManager<User> _signInManager;
         private readonly UserManager<User> _userManager;
+        private readonly INotificationRepository _notificationRepository;
 
         public ChatController(IHubContext<MessageHub> chat,
             AppDbContext context,
             SignInManager<User> signInManager,
-            UserManager<User> userManager)
+            UserManager<User> userManager,
+            INotificationRepository notificationRepository)
         {
             _chat = chat;
             _context = context;
             _signInManager = signInManager;
             _userManager = userManager;
-
+            _notificationRepository = notificationRepository;
         }
 
         public string EncryptCeaser(string plaintext, int offset)
@@ -61,6 +64,15 @@ namespace ChatDemoSignalR.Controllers
         public IActionResult Index()
         {
             var rooms = _context.ChatRooms.ToList();
+            return View(rooms);
+        }
+
+        public async Task <IActionResult> ListRooms()
+        {
+            var userId = _userManager.GetUserId(User);
+            var user = await _userManager.GetUserAsync(User);
+
+            var rooms = _context.ChatRooms.Where(x => !x.Users.Contains(user) && x.ChatType == ChatType.Room).ToList();
             return View(rooms);
         }
 
@@ -108,7 +120,9 @@ namespace ChatDemoSignalR.Controllers
         public async Task<IActionResult> CreateRoom(string roomName)
         {
             /*
+             *  TODO:
              *  validation
+             *  maybe ViewModel for a ChatRoom
              */
 
             if (roomName == null || roomName.Length == 0)
@@ -135,15 +149,7 @@ namespace ChatDemoSignalR.Controllers
         public async Task<IActionResult> PersonalPage()
         {
             var userId = _userManager.GetUserId(User);
-
-            //_userManager.GetUser
-            //var user = await _userManager.GetUserAsync(User);
-            //var test_user = await _context.Users.SingleOrDefaultAsync(x => x.UserName == User.Identity.Name);
-
-            //var user = await _context.Users.SingleOrDefaultAsync(x => x.UserName == User.Identity.Name);
             var user = await _userManager.GetUserAsync(User);
-            //var messagesArr = await _context.Users.Include(x => x.Messages).ToListAsync();
-            //var messages_list = _context.Messages.Where(x => x.UserId == userId).ToList();
 
             List<Message> messages =_context.Messages.Where(x => x.UserId == userId).ToList();
             List<User> users = _context.Users.Where(x => x.Email != user.Email).ToList();
@@ -156,6 +162,7 @@ namespace ChatDemoSignalR.Controllers
         public async Task<IActionResult> SendMessageToUser(string text, string target)
         {
             var user = await _userManager.GetUserAsync(User);
+            var userId = _userManager.GetUserId(User);
 
             if (user == null)
                 return NotFound("Could not find sender"); /// parameter ?
@@ -167,10 +174,14 @@ namespace ChatDemoSignalR.Controllers
                 return NotFound("Coulld not find target"); /// parameter ?
 
             var message = new Message { Text = text, Sender = userName, SendTime = DateTime.Now, UserId = receiver.Id };
-            //var message = new Message { Text = text, Sender = userName, SendTime = DateTime.Now };
 
+            // notification
+            string notificationText = $"You received a [private] message from {user.UserName} at " + String.Format("{0:HH:mm:ss dd/MM/yy}", DateTime.Now);
+            var notification = new Notification { UserId = receiver.Id, User = receiver, Text = text };
+
+            // adding notification
+            _notificationRepository.Create(notification);
             _context.Messages.Add(message);
-            //receiver.Messages.Add(message);
             await _context.SaveChangesAsync();
 
             var allMessages = _context.Messages.ToList();
@@ -194,7 +205,7 @@ namespace ChatDemoSignalR.Controllers
             //text = EncryptCeaser(text, 1);
 
             var message = new Message { Text = text, Sender = sender, SendTime = DateTime.Now };
-            var chatRoom = _context.ChatRooms.SingleOrDefault(x => x.RoomName == roomName);
+            var chatRoom = _context.ChatRooms.Include(x => x.Users).SingleOrDefault(x => x.RoomName == roomName);
 
             if (chatRoom != null)
             {
@@ -207,6 +218,19 @@ namespace ChatDemoSignalR.Controllers
                 await _context.SaveChangesAsync();
             }
 
+            // notification
+            string notificationText = $"New message in {roomName} at " + String.Format("{0:HH:mm:ss dd/MM/yy}", DateTime.Now);
+            
+            foreach (var member in chatRoom.Users)
+            {
+                if (member.Id == userId)
+                    continue;
+                var notification = new Notification { UserId = member.Id, User = member, Text = notificationText };
+                _context.Notifications.Add(notification);
+                //_notificationRepository.Create(notification);
+            }
+
+            await _context.SaveChangesAsync();
             //var allMessages = _context.Messages.ToList();
 
             return Ok(message);
@@ -215,6 +239,7 @@ namespace ChatDemoSignalR.Controllers
         public IActionResult DisplayChatRoom(string roomName)
         {
             var chatRoom = _context.ChatRooms.Include(x => x.Messages).SingleOrDefault(x => x.RoomName == roomName);
+            
             if (chatRoom == null)
             {
                 return RedirectToAction("Index", "Home");
@@ -222,19 +247,31 @@ namespace ChatDemoSignalR.Controllers
             return View(chatRoom);
         }
 
+        [Authorize]
         public async Task<IActionResult> JoinRoom(string roomName)
         {
             var user = await _userManager.GetUserAsync(User);
-            var chatRoom = _context.ChatRooms.SingleOrDefault(x => x.RoomName == roomName);
+
+            //var chatRoom = _context.ChatRooms.Include(x => x.ChatRoomUsers).ThenInclude(x => x.User).SingleOrDefault(x => x.RoomName == roomName);
+            var chatRoom = _context.ChatRooms.Include(x => x.Users).SingleOrDefault(x => x.RoomName == roomName);
+
+            if (chatRoom == null)
+            {
+                return NotFound("Room not found"); /// ?
+            }
 
             if (chatRoom != null && !chatRoom.Users.Contains(user))
             {
                 chatRoom.Users.Add(user);
-                await _context.SaveChangesAsync(); /// needed?
+                //var chatRoomUser = new ChatRoomUser { ChatRoomId = chatRoom.Id, ChatRoom = chatRoom, User = user, UserId = user.Id };
+                //chatRoom.ChatRoomUsers.Add(chatRoomUser);
+                await _context.SaveChangesAsync();
             }
 
             return Ok();
         }
+
+        
 
         /// leave room
     }

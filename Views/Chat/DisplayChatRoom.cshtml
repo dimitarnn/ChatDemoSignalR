@@ -15,7 +15,7 @@
 </div>
 
 <div class="row">
-    <div id="messages">
+    <div id="messages" class="col-12">
         @foreach (var message in Model.Messages)
         {
 
@@ -55,13 +55,29 @@
     </div>
 </form>
 
+@*<div id="notification-content">
+    <ul class="list-group">
+        <li class="list-group-item notification-text" data-notificationId="1">Message</li>
+        <li class="list-group-item notification-text" data-notificationId="2">Message</li>
+        <li class="list-group-item notification-text" data-notificationId="3">Message</li>
+        <li class="list-group-item notification-text" data-notificationId="4">Message</li>
+    </ul>
+</div>*@
 
 <script>
     var ChatRoomMessages = @Html.Raw(Json.Serialize(Model.Messages));
+    //var UserName = @Html.Raw(Json.Serialize(User.Identity.Name));
+
+    var UserName = @(_signInManager.IsSignedIn(User) ? Html.Raw(Json.Serialize(User.Identity.Name)) : Html.Raw(Json.Serialize("")));
+
+    @*if (@_signInManager.IsSignedIn(User) == true) {
+        UserName = @Html.Raw(Json.Serialize(User.Identity.Name));
+    }*@
     console.log('ChatRoomMessages: + + ')
     console.log(ChatRoomMessages);
 </script>
 
 @section Scripts {
+
     <script src="~/js/message.js"></script>
 }
