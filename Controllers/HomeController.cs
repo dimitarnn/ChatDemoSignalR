@@ -23,6 +23,11 @@ namespace ChatDemoSignalR.Controllers
             return View();
         }
 
+        public IActionResult TestView()
+        {
+            return View();
+        }
+
         public IActionResult GetUserName()
         {
             var username = User.Identity.Name;

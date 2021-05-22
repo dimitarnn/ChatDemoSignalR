@@ -1,0 +1,13 @@
+﻿<div id="root"></div>
+<div id="roomName" hidden>Test Room</div>
+
+
+
+@section Scripts {
+    <script>
+        const _roomName = @Html.Raw(Json.Serialize("Test Room"));
+        const roomName = @Html.Raw(Json.Serialize("Test Room"));
+        const _user = @(_signInManager.IsSignedIn(User) ? Html.Raw(Json.Serialize(User.Identity.Name)) : Html.Raw(Json.Serialize("Anonymous")));
+    </script>
+    <script src="~/js/dist/displayChatRoom.bundle.js"></script>
+} 

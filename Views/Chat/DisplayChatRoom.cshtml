@@ -7,7 +7,7 @@
     <form>
         <div class="input-group input-group-sm">
             <div class="input-group-prepend">
-                <span class="input-group-text">Choose a cypher</span>
+                <span class="input-group-text">Choose a key</span>
             </div>
             <input id="cypher" type="number" value="1"/>
         </div>
@@ -55,14 +55,6 @@
     </div>
 </form>
 
-@*<div id="notification-content">
-    <ul class="list-group">
-        <li class="list-group-item notification-text" data-notificationId="1">Message</li>
-        <li class="list-group-item notification-text" data-notificationId="2">Message</li>
-        <li class="list-group-item notification-text" data-notificationId="3">Message</li>
-        <li class="list-group-item notification-text" data-notificationId="4">Message</li>
-    </ul>
-</div>*@
 
 <script>
     var ChatRoomMessages = @Html.Raw(Json.Serialize(Model.Messages));

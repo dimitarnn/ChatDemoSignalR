@@ -21,11 +21,11 @@ namespace ChatDemoSignalR.Repository
             return _context.Notifications.Where(x => x.UserId == userId && !x.IsRead).ToList();
         }
 
-        public void Create(Notification notification)
+        public async Task Create(Notification notification)
         {
             _context.Notifications.Add(notification);
-            _context.SaveChanges();
-            //await _context.SaveChangesAsync();
+            //_context.SaveChanges();
+            await _context.SaveChangesAsync();
         }
 
         public void ReadNotification(int notificationId)

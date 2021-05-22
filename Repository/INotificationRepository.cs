@@ -9,7 +9,7 @@ namespace ChatDemoSignalR.Repository
     public interface INotificationRepository
     {
         List<Notification> GetUserNotifications(string userId);
-        void Create(Notification notification);
+        Task Create(Notification notification);
         void ReadNotification(int notificationId);
     }
 }

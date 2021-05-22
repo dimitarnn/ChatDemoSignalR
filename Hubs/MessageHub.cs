@@ -77,6 +77,8 @@ namespace ChatDemoSignalR.Hubs
         {
             //var message = new Message { Text = text, Sender = sender, SendTime = sendTime };
             //var message1 = message;
+            //var username = Context.User.Identity.Name;
+            //var list = _connections.GetConnections(username);
             await Clients.Group(group).SendAsync("ReceiveMessage", message);
         }
 

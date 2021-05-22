@@ -23,7 +23,7 @@ $(function () {
     var roomName = $('#roomName').text();
 
     var tmp = $(connection);
-    console.log(connection);
+    //console.log(connection);
 
     var myDefaultWhiteList = $.fn.tooltip.Constructor.Default.whiteList;
 
@@ -61,17 +61,31 @@ console.log(tmp);
 
 connection.start().then(function () {
     var roomName = $('#roomName').text();
+    console.log('/site.js/ roomName: ' + roomName);
+
 
     connection.invoke('JoinGroup', roomName).catch(function (err) {
         return console.error(err.toString());
     });
 
-    connection.invoke('JoinGroup', window.roomName).catch(function (err) {
-        return console.error(err);
-    });
+    console.log(window.roomName);
 
-    $('#messages').animate({ scrollTop: $('#messages')[0].scrollHeight }, 500);
+    //if (window.roomName != undefined) {
+    //    connection.invoke('JoinGroup', window.roomName).catch(function (err) {
+    //        return console.error(err);
+    //    });
+    //}
+
+    //console.log('#messages:');
+    //console.log($('#messages')[0].scrollHeight);
+
+    if ($('#messages').length) {
+        $('#messages').animate({ scrollTop: $('#messages')[0].scrollHeight }, 500);
+    }
+    //
+    
 });
+
 
 var curr = connection;
 console.log(curr);
@@ -99,6 +113,8 @@ $(function () {
         readNotification(notificationId, target);
     })
 });
+
+
 
 function getNotifications() {
     var res = '<ul class="list-group">';

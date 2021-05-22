@@ -104,6 +104,27 @@ namespace ChatDemoSignalR.Controllers
             return View(friends);
         }
 
+        // for react test page
+        // async?
+        [Authorize]
+        public async Task<IActionResult> GetAllUsers()
+        {
+            var userId = _userManager.GetUserId(User);
+            var user = await _context.Users.Include(x => x.Following).SingleOrDefaultAsync(x => x.Id == userId);
+
+            List<UserVM> friends = new List<UserVM>();
+            foreach (var tmp in user.Following)
+            {
+                var friend = await _context.Users.SingleOrDefaultAsync(x => x.Id == tmp.FriendId);
+                if (friend != null)
+                {
+                    friends.Add(new UserVM { Id = friend.Id, UserName = friend.UserName });
+                }
+            }
+
+            return Ok(friends);
+        }
+
         [Authorize]
         public async Task<IActionResult> DisplayPrivateChat(string friendId)
         {
@@ -180,7 +201,7 @@ namespace ChatDemoSignalR.Controllers
             var notification = new Notification { UserId = receiver.Id, User = receiver, Text = text };
 
             // adding notification
-            _notificationRepository.Create(notification);
+            await _notificationRepository.Create(notification);
             _context.Messages.Add(message);
             await _context.SaveChangesAsync();
 
@@ -226,8 +247,8 @@ namespace ChatDemoSignalR.Controllers
                 if (member.Id == userId)
                     continue;
                 var notification = new Notification { UserId = member.Id, User = member, Text = notificationText };
-                _context.Notifications.Add(notification);
-                //_notificationRepository.Create(notification);
+                //_context.Notifications.Add(notification);
+                await _notificationRepository.Create(notification);
             }
 
             await _context.SaveChangesAsync();
@@ -245,6 +266,20 @@ namespace ChatDemoSignalR.Controllers
                 return RedirectToAction("Index", "Home");
             }
             return View(chatRoom);
+        }
+
+        // for react
+        public async Task<IActionResult> GetMessagesInRoom(string roomName)
+        {
+            var chatRoom = await _context.ChatRooms.SingleOrDefaultAsync(x => x.RoomName == roomName);
+            var messages = await _context.Messages.Where(x => x.ChatRoomId == chatRoom.Id).ToListAsync();
+
+            if (chatRoom == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(messages);
         }
 
         [Authorize]
