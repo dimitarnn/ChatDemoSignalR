@@ -56,7 +56,6 @@ function NotificationsContainer({ displayCnt }) {
             dispatch({ type: 'UPDATE_FETCHING', payload: { isFetching: true } });
 
             const index = Math.ceil(state.currentCount / displayCnt) + 1;
-            //const url = `/Notification/LoadNotifications?index=${index}&size=${displayCnt}`;
             const url = '/Notification/LoadNotifications';
 
             axios.get(url, {
@@ -94,8 +93,6 @@ function NotificationsContainer({ displayCnt }) {
             .catch(error => console.error(error.toString()));
 
         const index = Math.ceil(state.currentCount / displayCnt) + 1;
-        //const url = `/Notification/LoadNotifications?index=${index}&size=${displayCnt}`;
-        //const url = `/Notification/LoadNotifications?skip=${state.notifications.length}&size=${displayCnt}`;
         const url = '/Notification/LoadNotifications'
         axios.get(url, {
             params: {
@@ -129,22 +126,9 @@ function NotificationsContainer({ displayCnt }) {
             console.log(' *** received notification *** ');
 
             const index = Math.ceil(state.currentCount / displayCnt) + 1;
-            //const url = `/Notification/LoadNotifications?index=${index}&size=${displayCnt}`;
             const url = '/Notification/LoadNotifications';
 
             dispatch({ type: 'PREPEND_NOTIFICATIONS', payload: { list: [notification] } });
-
-            //axios.get(url, {
-            //    params: {
-            //        skip: state.notification.currentCount,
-            //        size: displayCnt
-            //    }
-            //})
-            //    .then(response => response.data)
-            //    .then(list => {
-            //        dispatch({ type: 'REPLACE_NOTIFICATIONS', payload: { list } });
-            //    })
-            //    .catch(error => console.error(error.toString()));
         })
     }, [connection]);
 

@@ -205,14 +205,13 @@ function Messages({ displayCnt, updateMessages, messages }) {
             dispatch({ type: 'UPDATE_FETCHING', payload: { isFetching: true } });
             const index = Math.ceil(state.currentCount / displayCnt) + 1;
             const url = '/Chat/GetMessages';
-            //console.log(`index: ${index}, size: ${displayCnt}`)
             axios.get(url, {
                 params: {
                     roomName: _roomName,
                     skip: messages.length,
                     size: displayCnt
                 }
-            }) // { params: { roomName: _roomName, index: index, size: displayCnt } }
+            })
                 .then(response => response.data)
                 .then(list => {
                     dispatch({ type: 'UPDATE_FETCHING', payload: { isFetching: false } });
@@ -329,10 +328,6 @@ function Page({ displayName }) {
 
     useEffect(() => {
 
-        //console.log('Messages updated');
-        //console.log(state.messages);
-        //console.log('Scroll Type: ' + state.scrollType);
-
         if (state.scrollType == 0)
             return;
 
@@ -352,11 +347,8 @@ function Page({ displayName }) {
         axios.post(url, null, { params: { text, roomName: _roomName } })
             .then(response => response.data)
             .then(data => {
-                //const message = { id: data.id, text: data.text, sender: data.sender, sendTime: data.sendTime };
                 console.log('Received model from ChatController')
                 console.log(data);
-                //const message = data.message;
-                //const notification = data.notification;
                 state.connection.invoke('SendMessageToGroup', _roomName, data.message);
                 state.connection.invoke('SendNotificationToGroup', _roomName, data.notification);
             })
@@ -378,11 +370,7 @@ function Page({ displayName }) {
         state.connection.start()
             .then(() => state.connection.invoke('JoinGroup', _roomName))
             .then(() => {
-                //const date = new Date();
-                //const id = date.getTime();
-                //console.log('id: ');
-                //console.log(id);
-                const message = { /*id: id, */text: `User ${_user} connected.`, sender: 'John Cena', sendTime: new Date() };
+                const message = { text: `User ${_user} connected.`, sender: 'John Cena', sendTime: new Date() };
                 console.log(message);
                 state.connection.invoke('SendMessageToGroup', _roomName, message);
             })

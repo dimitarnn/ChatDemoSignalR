@@ -13,34 +13,22 @@ namespace ChatDemoSignalR.Hubs
 {
     public class MessageHub : Hub
     {
-        private readonly UserManager<User> _userManager;
-        private readonly AppDbContext _context;
         private readonly static ConnectionMapping<string> _connections =
             new ConnectionMapping<string>();
-        private readonly IUserRepository _userRepository;
-        private readonly IChatRepository _chatRepository;
         private readonly IUnitOfWork _unitOfWork;
 
-        public MessageHub(UserManager<User> userManager,
-            AppDbContext context,
-            IUserRepository userRepository,
-            IChatRepository chatRepository,
-            IUnitOfWork unitOfWork)
+        public MessageHub(IUnitOfWork unitOfWork)
         {
-            _userManager = userManager;
-            _context = context;
-            _userRepository = userRepository;
-            _chatRepository = chatRepository;
             _unitOfWork = unitOfWork;
         }
 
         public async Task SendNotificationToGroup(string group, Notification notification)
         {
-            //var chatRoom = _context.ChatRooms.SingleOrDefault(x => x.RoomName == group);
-            //ChatRoom chatRoom = await _chatRepository.GetRoom(group);
+            if (notification == null)
+                return;
+            
             ChatRoom chatRoom = await _unitOfWork.ChatRooms.GetByName(group);
-            //var users = _context.Users.Where(x => x.ChatRooms.Contains(chatRoom)).ToList();
-            IEnumerable<User> users = await _userRepository.GetUsersInRoom(chatRoom);
+            List<User> users = (await _unitOfWork.Users.GetUsersInRoom(chatRoom)).ToList();
 
             foreach (User user in users)
             {
@@ -56,7 +44,7 @@ namespace ChatDemoSignalR.Hubs
                     CreationTime = notification.CreationTime
                 };
 
-                await Clients.Clients(connections).SendAsync("ReceiveNotification", notification); /// a call to update notifications
+                await Clients.Clients(connections).SendAsync("ReceiveNotification", tmp); /// a call to update notifications
             }
         }
 
@@ -99,10 +87,6 @@ namespace ChatDemoSignalR.Hubs
 
         public async Task SendMessageToGroup(string group, Message message)
         {
-            //var message = new Message { Text = text, Sender = sender, SendTime = sendTime };
-            //var message1 = message;
-            //var username = Context.User.Identity.Name;
-            //var list = _connections.GetConnections(username);
             await Clients.Group(group).SendAsync("ReceiveMessage", message);
         }
 

@@ -20,25 +20,16 @@ namespace ChatDemoSignalR.Controllers
         private readonly SignInManager<User> _signInManager;
         private readonly UserManager<User> _userManager;
         private readonly IHubContext<MessageHub> _chat;
-        //private readonly AppDbContext _context;
-        //private readonly IUserRepository _userRepository;
-        //private readonly IChatRepository _chatRepository;
         private readonly IUnitOfWork _unitOfWork;
 
         public AccountController(SignInManager<User> signInManager,
             UserManager<User> userManager,
             IHubContext<MessageHub> chat,
-            //AppDbContext context,
-            //IUserRepository userRepository,
-            //IChatRepository chatRepository,
             IUnitOfWork unitOfWork)
         {
             _signInManager = signInManager;
             _userManager = userManager;
             _chat = chat;
-            //_context = context;
-            //_userRepository = userRepository;
-            //_chatRepository = chatRepository;
             _unitOfWork = unitOfWork;
         }
 
@@ -110,7 +101,6 @@ namespace ChatDemoSignalR.Controllers
         public async Task<IActionResult> ListUsers()
         {
             var userId = _userManager.GetUserId(User);
-            //User user = await _userRepository.GetUserWithFollowing(userId);
             User user = await _unitOfWork.Users.GetUserWithFollowing(userId);
 
             IEnumerable<User> users;
@@ -118,7 +108,6 @@ namespace ChatDemoSignalR.Controllers
 
             foreach (var tmp in user.Following)
             {
-                //User friend = await _userRepository.GetUser(tmp.FriendId);
                 User friend = await _unitOfWork.Users.Get(tmp.FriendId);
                 if (friend == null)
                     continue;
@@ -129,11 +118,8 @@ namespace ChatDemoSignalR.Controllers
 
             if (friends.Count() > 0)
                 users = await _unitOfWork.Users.GetUsersExcept(friends);
-            //users = await _userRepository.GetUsersExcept(friends);
             else
                 users = await _unitOfWork.Users.GetUsersExcept(friends);
-                //users = await _userRepository.GetUsersExcept(userId);
-
 
             return View(users);
         }
@@ -143,8 +129,6 @@ namespace ChatDemoSignalR.Controllers
         public async Task<IActionResult> AddFriend(string friendId)
         {
             var userId =  _userManager.GetUserId(User);
-            //User user = await _userRepository.GetUserWithFollowedAndFollowing(userId);
-            //User friend = await _userRepository.GetUserWithFollowedAndFollowing(friendId);
             User user = await _unitOfWork.Users.GetUserWithFollowedAndFollowing(userId);
             User friend = await _unitOfWork.Users.GetUserWithFollowedAndFollowing(friendId);
 
@@ -171,7 +155,6 @@ namespace ChatDemoSignalR.Controllers
                 int cmp = String.Compare(user.Id, friend.Id);
                 string roomName = (cmp <= 0 ? user.Id : friend.Id) + "_" + (cmp <= 0 ? friend.Id : user.Id);
 
-                //ChatRoom room = await _chatRepository.GetRoom(roomName);
                 ChatRoom room = await _unitOfWork.ChatRooms.GetByName(roomName);
 
                 if (room == null)
@@ -182,25 +165,14 @@ namespace ChatDemoSignalR.Controllers
                         RoomName = roomName
                     };
 
-                    //chat.Users.Add(user);
-                    //chat.Users.Add(friend);
-
                     chat.Users.Add(user);
                     chat.Users.Add(friend);
 
-                    //_chatRepository.AddUserToRoom(chat, user);
-                    //_chatRepository.AddUserToRoom(chat, friend);
-
-
-                    //await _chatRepository.Add(chat);
-                    //await _chatRepository.Save();
                     _unitOfWork.ChatRooms.Add(chat);
                     
                 }
                 await _unitOfWork.Complete();
-                //await _context.SaveChangesAsync(); // remove?
             }
-
 
             return RedirectToAction("ListUsers");
         }
