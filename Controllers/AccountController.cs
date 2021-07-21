@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using ChatDemoSignalR.Repository;
 
 namespace ChatDemoSignalR.Controllers
 {
@@ -19,17 +20,26 @@ namespace ChatDemoSignalR.Controllers
         private readonly SignInManager<User> _signInManager;
         private readonly UserManager<User> _userManager;
         private readonly IHubContext<MessageHub> _chat;
-        private readonly AppDbContext _context;
+        //private readonly AppDbContext _context;
+        //private readonly IUserRepository _userRepository;
+        //private readonly IChatRepository _chatRepository;
+        private readonly IUnitOfWork _unitOfWork;
 
         public AccountController(SignInManager<User> signInManager,
             UserManager<User> userManager,
             IHubContext<MessageHub> chat,
-            AppDbContext context)
+            //AppDbContext context,
+            //IUserRepository userRepository,
+            //IChatRepository chatRepository,
+            IUnitOfWork unitOfWork)
         {
             _signInManager = signInManager;
             _userManager = userManager;
             _chat = chat;
-            _context = context;
+            //_context = context;
+            //_userRepository = userRepository;
+            //_chatRepository = chatRepository;
+            _unitOfWork = unitOfWork;
         }
 
         [HttpGet]
@@ -78,9 +88,6 @@ namespace ChatDemoSignalR.Controllers
             if (result.Succeeded)
             {
                 await _signInManager.SignInAsync(user, isPersistent: false);
-                //var userId = await _userManager.GetUserIdAsync(User);
-                //var tmpUser = await _userManager.FindByIdAsync(userId);
-                //var currUser = await _userManager.GetUserAsync(User);
                 return RedirectToAction("Index", "Home");
             }
 
@@ -96,34 +103,37 @@ namespace ChatDemoSignalR.Controllers
         {
             await _signInManager.SignOutAsync();
             return RedirectToAction("Index", "Home");
-            //return View();
         }
 
         [Authorize]
         [HttpGet]
-        public IActionResult ListUsers()
+        public async Task<IActionResult> ListUsers()
         {
             var userId = _userManager.GetUserId(User);
-            var user = _context.Users.Include(x => x.Following).SingleOrDefault(x => x.Id == userId);
+            //User user = await _userRepository.GetUserWithFollowing(userId);
+            User user = await _unitOfWork.Users.GetUserWithFollowing(userId);
 
-            //if (user.Friends == null)
-            //    user.Friends = new List<User>();
-
-            List<User> users;
+            IEnumerable<User> users;
             List<User> friends = new List<User>();
 
             foreach (var tmp in user.Following)
             {
-                User friend = _context.Users.SingleOrDefault(x => x.Id == tmp.FriendId);
+                //User friend = await _userRepository.GetUser(tmp.FriendId);
+                User friend = await _unitOfWork.Users.Get(tmp.FriendId);
                 if (friend == null)
                     continue;
                 friends.Add(friend);
             }
 
+            friends.Add(user);
+
             if (friends.Count() > 0)
-                users = _context.Users.Where(x => x.Id != userId && !friends.Contains(x)).ToList();
+                users = await _unitOfWork.Users.GetUsersExcept(friends);
+            //users = await _userRepository.GetUsersExcept(friends);
             else
-                users = _context.Users.Where(x => x.Id != userId).ToList();
+                users = await _unitOfWork.Users.GetUsersExcept(friends);
+                //users = await _userRepository.GetUsersExcept(userId);
+
 
             return View(users);
         }
@@ -132,19 +142,14 @@ namespace ChatDemoSignalR.Controllers
         [HttpPost]
         public async Task<IActionResult> AddFriend(string friendId)
         {
-            //var user = await _userManager.GetUserAsync(User);
-            var userId =  _userManager.GetUserId(User); 
-            var user = _context.Users.Include(x => x.Following).Include(x => x.FollowedBy).SingleOrDefault(x => x.Id == userId);
-            var friend = _context.Users.Include(x => x.Following).Include(x => x.FollowedBy).SingleOrDefault(x => x.Id == friendId);
+            var userId =  _userManager.GetUserId(User);
+            //User user = await _userRepository.GetUserWithFollowedAndFollowing(userId);
+            //User friend = await _userRepository.GetUserWithFollowedAndFollowing(friendId);
+            User user = await _unitOfWork.Users.GetUserWithFollowedAndFollowing(userId);
+            User friend = await _unitOfWork.Users.GetUserWithFollowedAndFollowing(friendId);
 
             if (friend == null)
                 return RedirectToAction("ListUsers");
-
-            //if (user.Friends == null)
-            //    user.Friends = new List<User>();
-
-            //if (friend.Friends == null)
-            //    friend.Friends = new List<User>();
 
             if (friend.Id != user.Id)
             {
@@ -155,24 +160,19 @@ namespace ChatDemoSignalR.Controllers
                 {
                     user.Following.Add(friends1);
                     user.FollowedBy.Add(friends2);
-                    //_context.UserFriends.Add(friends1);
                 }
-
-                
 
                 if (!friend.Following.Contains(friends2))
                 {
                     friend.Following.Add(friends2);
                     friend.FollowedBy.Add(friends1);
-                    //_context.UserFriends.Add(friends2);
                 }
 
-                //if (!created)
-                //{
                 int cmp = String.Compare(user.Id, friend.Id);
                 string roomName = (cmp <= 0 ? user.Id : friend.Id) + "_" + (cmp <= 0 ? friend.Id : user.Id);
 
-                var room = await _context.ChatRooms.SingleOrDefaultAsync(x => x.RoomName == roomName);
+                //ChatRoom room = await _chatRepository.GetRoom(roomName);
+                ChatRoom room = await _unitOfWork.ChatRooms.GetByName(roomName);
 
                 if (room == null)
                 {
@@ -182,15 +182,23 @@ namespace ChatDemoSignalR.Controllers
                         RoomName = roomName
                     };
 
+                    //chat.Users.Add(user);
+                    //chat.Users.Add(friend);
+
                     chat.Users.Add(user);
                     chat.Users.Add(friend);
 
+                    //_chatRepository.AddUserToRoom(chat, user);
+                    //_chatRepository.AddUserToRoom(chat, friend);
 
-                    _context.ChatRooms.Add(chat);
+
+                    //await _chatRepository.Add(chat);
+                    //await _chatRepository.Save();
+                    _unitOfWork.ChatRooms.Add(chat);
+                    
                 }
-                //}
-
-                await _context.SaveChangesAsync();
+                await _unitOfWork.Complete();
+                //await _context.SaveChangesAsync(); // remove?
             }
 
 

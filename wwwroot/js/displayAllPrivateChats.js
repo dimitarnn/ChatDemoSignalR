@@ -1,57 +1,45 @@
-﻿import React, { useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
-import $ from 'jquery';
+import axios from 'axios';
 
 var app = document.getElementById('root');
 
-class PrivateChat extends React.Component {
-    constructor(props) {
-        super(props);
-    }
-    render() {
-        const url = '/Chat/DisplayPrivateChat?friendId=' + this.props.userId;
-        const userName = this.props.userName;
-        return (
-            <div className="card">
-                <div className="card-header">
-                    {userName}
-                </div>
-                <div className="card-body">
-                    <a href={url} className="btn btn-primary">Go to chat</a>
-                </div>
+function PrivateChat({ userId, userName }) {
+    const url = `/Chat/DisplayPrivateChat?frienId=${userId}`;
+
+    return (
+        <div className="card">
+            <div className="card-header">
+                {userName}
             </div>
-        );
-    }
+            <div className="card-body">
+                <a href={url} className="btn btn-primary">Go to chat</a>
+            </div>
+        </div>
+    );
 }
 
-class ChatContainer extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state = { usersList: [] }
-    }
+function ChatContainer() {
+    const [usersList, setUsersList] = useState([]);
 
-    componentDidMount() {
-        let my = this;
-        $.get('/Chat/GetAllUsers', function (list) {
-            //console.log('list inside ChatContainer: ');
-            //console.log(list);
-            //console.log('state list: ');
-            my.setState({ usersList: list });
-            //console.log(my.state.usersList);
-        }).catch(function (error) {
-            return console.error(error.toString());
-        });
-    }
+    useEffect(() => {
+        axios.get('/Chat/GetAllUsers')
+            .then(response => response.data)
+            .then(list => setUsersList(list))
+            .catch(error => console.error(error.toString()));
+    }, []);
 
-    render() {
-        return (
-                this.state.usersList.map((user) => {
+    return (
+        <div>
+            {
+                usersList.map(user => {
                     return (
                         <PrivateChat key={user.Id} userName={user.userName} userId={user.id} />
                     );
                 })
-            );
-    }
+            }
+        </div>
+    );
 }
 
 ReactDOM.render(<ChatContainer />, app);

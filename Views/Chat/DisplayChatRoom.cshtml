@@ -1,75 +1,20 @@
-﻿@model ChatRoom
+﻿@{ 
+    Layout = "Layout";
+}
+@model ChatRoom
 
-<div class="row" id="info">
-    <h5 class="col-lg-3 col-md-6 col-sm-12" id="roomName">@Model.RoomName</h5>
-    <h4 class="col-lg-5 col-md-6 col-sm-12" id="username">Logged as: @(_signInManager.IsSignedIn(User) ? User.Identity.Name : "Anonymous")</h4>
-    <div id="user" hidden>@User.Identity.Name</div>
-    <form>
-        <div class="input-group input-group-sm">
-            <div class="input-group-prepend">
-                <span class="input-group-text">Choose a key</span>
-            </div>
-            <input id="cypher" type="number" value="1"/>
-        </div>
-    </form>
-</div>
-
-<div class="row">
-    <div id="messages" class="col-12">
-        @foreach (var message in Model.Messages)
-        {
-
-            @if (message.Sender == User.Identity.Name)
-            {
-                <div class="message">
-                    <header>@message.SendTime</header>
-                    <p><span class="sender" style="color: #e053b3">@message.Sender: </span><span class="text">@message.Text</span></p>
-                </div>
-            }
-            else
-            {
-                <div class="message">
-                    <header>@message.SendTime</header>
-                    <p><span class="sender">@message.Sender: </span><span class="text">@message.Text</span></p>
-                </div>
-            }
-        }
-    </div>
-</div>
-
-
-<form>
-    <div class="chat-input">
-        <div class="input-group input-group-sm">
-            <div class="input-group-prepend">
-                <span class="input-group-text">Choose a key</span>
-            </div>
-            <input id="key" type="number" value="1" />
-        </div>
-        <div class="input-group mb-3">
-            <textarea id="message" placeholder="Your message" name="message" class="form-control"></textarea>
-            <div class="input-group-append">
-                <button class="btn btn-outline-secondary" type="button" id="groupSendButton">Send Message</button>
-            </div>
-        </div>
-    </div>
-</form>
-
-
-<script>
-    var ChatRoomMessages = @Html.Raw(Json.Serialize(Model.Messages));
-    //var UserName = @Html.Raw(Json.Serialize(User.Identity.Name));
-
-    var UserName = @(_signInManager.IsSignedIn(User) ? Html.Raw(Json.Serialize(User.Identity.Name)) : Html.Raw(Json.Serialize("")));
-
-    @*if (@_signInManager.IsSignedIn(User) == true) {
-        UserName = @Html.Raw(Json.Serialize(User.Identity.Name));
-    }*@
-    console.log('ChatRoomMessages: + + ')
-    console.log(ChatRoomMessages);
-</script>
+@*<div class="content">*@
+    <div id="root"></div>
+    <div id="roomName" hidden>Test Room</div>
+@*</div>*@
 
 @section Scripts {
+    <script>
+        const _roomName = @Html.Raw(Json.Serialize(Model.RoomName));
+        const roomName = @Html.Raw(Json.Serialize(Model.RoomName));
+        const _user = @(_signInManager.IsSignedIn(User) ? Html.Raw(Json.Serialize(User.Identity.Name)) : Html.Raw(Json.Serialize("Anonymous")));
+        const _displayName = _roomName;
+    </script>
+    <script src="~/js/dist/displayChatRoom.bundle.js"></script>
 
-    <script src="~/js/message.js"></script>
 }

@@ -53,6 +53,7 @@ const connection = new signalR.HubConnectionBuilder()
     .build();
 
 var tmp = connection;
+var _global = connection;
 console.log(tmp);
 
 //connection.start().then(function () {
@@ -148,6 +149,7 @@ function getNotifications() {
 }
 
 $(document).ready(function () {
+    //alert('document is ready!');
     $('[data-toggle="popover"]').popover({
         content: function () {
             return $('#notification-content').html();

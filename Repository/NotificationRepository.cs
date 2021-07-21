@@ -1,5 +1,6 @@
 ﻿using ChatDemoSignalR.Data;
 using ChatDemoSignalR.Models;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,37 +8,48 @@ using System.Threading.Tasks;
 
 namespace ChatDemoSignalR.Repository
 {
-    public class NotificationRepository : INotificationRepository
+    public class NotificationRepository : Repository<Notification>, INotificationRepository
     {
-        private readonly AppDbContext _context;
-
         public NotificationRepository(AppDbContext context)
+            : base(context)
         {
-            _context = context;
         }
 
-        public List<Notification> GetUserNotifications(string userId)
+        public async Task<IEnumerable<Notification>> GetUserNotifications(string userId)
         {
-            return _context.Notifications.Where(x => x.UserId == userId && !x.IsRead).ToList();
+            return await AppDbContext.Notifications.Where(x => x.UserId == userId && !x.IsRead).ToListAsync();
         }
 
-        public async Task Create(Notification notification)
+        public async Task<int> GetCount()
         {
-            _context.Notifications.Add(notification);
-            //_context.SaveChanges();
-            await _context.SaveChangesAsync();
+            return await AppDbContext.Notifications.CountAsync();
         }
 
-        public void ReadNotification(int notificationId)
+        public async Task<IEnumerable<Notification>> GetNext(string userId, int skip, int size)
         {
-            var notification = _context.Notifications.SingleOrDefault(x => x.Id == notificationId);
+            List<Notification> allNotifications = await AppDbContext.Notifications.Where(x => x.UserId == userId).ToListAsync();
+            int count = allNotifications.Count;
+
+            List<Notification> notifications = allNotifications.Skip(count - skip - size).Take(size).ToList();
+            notifications.Reverse();
+
+            return notifications;
+        }
+
+        public async Task ReadNotification(int notificationId)  // is update?
+        {
+            Notification notification = await AppDbContext.Notifications.SingleOrDefaultAsync(x => x.Id == notificationId);
 
             if (notification == null)
                 return;
 
             notification.IsRead = true;
-            _context.Notifications.Update(notification);
-            _context.SaveChanges();
+            AppDbContext.Notifications.Update(notification);
+        }
+
+        public AppDbContext AppDbContext
+        {
+            get { return Context as AppDbContext; }
         }
     }
 }

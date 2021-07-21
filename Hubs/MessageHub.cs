@@ -1,6 +1,7 @@
 ﻿using ChatDemoSignalR.Data;
 using ChatDemoSignalR.Helpers;
 using ChatDemoSignalR.Models;
+using ChatDemoSignalR.Repository;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
 using System;
@@ -16,23 +17,46 @@ namespace ChatDemoSignalR.Hubs
         private readonly AppDbContext _context;
         private readonly static ConnectionMapping<string> _connections =
             new ConnectionMapping<string>();
-        public MessageHub(UserManager<User> userManager, AppDbContext context)
+        private readonly IUserRepository _userRepository;
+        private readonly IChatRepository _chatRepository;
+        private readonly IUnitOfWork _unitOfWork;
+
+        public MessageHub(UserManager<User> userManager,
+            AppDbContext context,
+            IUserRepository userRepository,
+            IChatRepository chatRepository,
+            IUnitOfWork unitOfWork)
         {
             _userManager = userManager;
             _context = context;
+            _userRepository = userRepository;
+            _chatRepository = chatRepository;
+            _unitOfWork = unitOfWork;
         }
 
-        public async Task SendNotificationToGroup(string group)
+        public async Task SendNotificationToGroup(string group, Notification notification)
         {
-            var chatRoom = _context.ChatRooms.SingleOrDefault(x => x.RoomName == group);
-            var users = _context.Users.Where(x => x.ChatRooms.Contains(chatRoom)).ToList();
+            //var chatRoom = _context.ChatRooms.SingleOrDefault(x => x.RoomName == group);
+            //ChatRoom chatRoom = await _chatRepository.GetRoom(group);
+            ChatRoom chatRoom = await _unitOfWork.ChatRooms.GetByName(group);
+            //var users = _context.Users.Where(x => x.ChatRooms.Contains(chatRoom)).ToList();
+            IEnumerable<User> users = await _userRepository.GetUsersInRoom(chatRoom);
 
-            foreach(var user in users)
+            foreach (User user in users)
             {
                 var connections = _connections.GetConnections(user.UserName).ToList();
-                if (!connections.Any())
+                if (!connections.Any() || user.Id == notification.UserId)
                     continue;
-                await Clients.Clients(connections).SendAsync("ReceiveNotification");
+
+                Notification tmp = new Notification
+                {
+                    UserId = user.Id,
+                    User = user,
+                    Text = notification.Text,
+                    CreationTime = notification.CreationTime
+                };
+
+                await Clients.Clients(connections).SendAsync("ReceiveNotification", notification); /// a call to update notifications
             }
         }
 
@@ -80,6 +104,13 @@ namespace ChatDemoSignalR.Hubs
             //var username = Context.User.Identity.Name;
             //var list = _connections.GetConnections(username);
             await Clients.Group(group).SendAsync("ReceiveMessage", message);
+        }
+
+        public async Task SendMessageToOthersInGroup(string group, Message message)
+        {
+            var username = Context.User.Identity.Name;
+            var userConnections = _connections.GetConnections(username).ToList();
+            await Clients.GroupExcept(group, userConnections).SendAsync("ReceiveMessage", message);
         }
 
         public override async Task OnConnectedAsync()

@@ -5,7 +5,9 @@ module.exports = {
     entry: {
         main: './wwwroot/js/app.js',
         displayAllPrivateChats: './wwwroot/js/displayAllPrivateChats.js',
-        displayChatRoom: './wwwroot/js/displayChatRoom.js'
+        displayChatRoom: './wwwroot/js/displayChatRoom.js',
+        notifications: './wwwroot/js/notificationsScript.js',
+        displayRooms: './wwwroot/js/displayRooms.js'
     },
     output: {
         path: path.resolve(__dirname, './wwwroot/js/dist'),
@@ -27,5 +29,8 @@ module.exports = {
                 }
             }
         ]
+    },
+    resolve: {
+        extensions: ['*', '.js', '.jsx']
     }
 };

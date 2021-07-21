@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 
 namespace ChatDemoSignalR.Models
 {
-
     public class ChatRoom
     {
         public ChatRoom()

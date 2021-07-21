@@ -6,10 +6,14 @@ using System.Threading.Tasks;
 
 namespace ChatDemoSignalR.Repository
 {
-    public interface INotificationRepository
+    public interface INotificationRepository : IRepository<Notification>
     {
-        List<Notification> GetUserNotifications(string userId);
-        Task Create(Notification notification);
-        void ReadNotification(int notificationId);
+        Task<IEnumerable<Notification>> GetUserNotifications(string userId);
+
+        Task<IEnumerable<Notification>> GetNext(string userId, int skip, int size);
+
+        Task<int> GetCount();
+
+        Task ReadNotification(int notificationId);
     }
 }
