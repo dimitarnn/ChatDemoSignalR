@@ -23,5 +23,7 @@ namespace ChatDemoSignalR.Models
         public DateTime CreationTime { get; set; }
 
         public bool IsRead { get; set; } = false;
+
+        public string Source { get; set; }
     }
 }

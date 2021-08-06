@@ -7,12 +7,37 @@ import axios from 'axios';
 
 var target = document.getElementById('notifications');
 
-function Notification({ text, isRead }) {
+function Notification({ data, text, isRead, id }) {
     const classes = 'notification' + (isRead ? ' read' : '');
+    const [display, setDisplay] = useState(false);
+    const [read, setRead] = useState(isRead);
+
+    const handleClick = e => {
+        setDisplay(display => !display);
+    };
+
+    const handleNotificationClick = id => {
+        let url = `/Notification/Read?text=${text}&userId=${data.userId}`;
+        if (read)
+            url = `/Notification/Unread?text=${text}&userId=${data.userId}`;
+
+        axios.get(url)
+            .then(() => {
+                setRead(read => !read);
+            })
+            .catch(error => console.error(error.toString()));
+    }
 
     return (
-        <div className={ classes }>
-            { text }
+        <div>
+        <div onClick={handleClick} className={(read ? 'notification read' : 'notification')}>
+                <span>{text}</span>
+                <div style={{ display: (display ? 'flex' : 'none') }} className='notification-links' >
+                    <a onClick={() => handleNotificationClick(id)}>Mark as read</a>
+                    <a href={data.source}>Open</a>
+                </div>
+            </div>
+            
         </div>
     );
 }
@@ -102,6 +127,7 @@ function NotificationsContainer({ displayCnt }) {
         })
             .then(response => response.data)
             .then(list => {
+                //console.log(list);
                 dispatch({ type: 'UPDATE_COUNT', payload: { increase: displayCnt } });
                 dispatch({ type: 'UPDATE_NOTIFICATIONS', payload: { list } })
             })
@@ -123,7 +149,7 @@ function NotificationsContainer({ displayCnt }) {
             .catch(error => console.error(error.toString()));
 
         connection.on('ReceiveNotification', notification => {
-            console.log(' *** received notification *** ');
+            //console.log(' *** received notification *** ');
 
             const index = Math.ceil(state.currentCount / displayCnt) + 1;
             const url = '/Notification/LoadNotifications';
@@ -137,7 +163,7 @@ function NotificationsContainer({ displayCnt }) {
             {
                 state.notifications.map((notification) => {
                     return (
-                        <Notification key={notification.id} text={notification.text} isRead={notification.id % 2} />
+                        <Notification data={notification} key={notification.id} text={notification.text} isRead={notification.isRead} id={notification.id} />
                     );
                 })
             }

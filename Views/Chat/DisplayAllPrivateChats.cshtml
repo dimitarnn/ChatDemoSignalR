@@ -1,11 +1,11 @@
 ﻿@model List<User>
 @{ 
-    Layout = "_Layout";
+    Layout = "Layout";
 }
 
-<h1>My Friends</h1>
+@*<h1>My Friends</h1>*@
 
-<div class="container">
+@*<div class="container">
     @foreach (var user in Model)
     {
         <div class="card">
@@ -17,4 +17,12 @@
             </div>
         </div>
     }
+</div>*@
+
+<div class="main-container">
+    <div id="root"></div>
 </div>
+
+@section Scripts {
+    <script src="~/js/dist/displayAllPrivateChats.bundle.js"></script>
+}

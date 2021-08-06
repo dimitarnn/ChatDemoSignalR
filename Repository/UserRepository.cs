@@ -62,6 +62,19 @@ namespace ChatDemoSignalR.Repository
             return await AppDbContext.Users.Include(x => x.Following).SingleOrDefaultAsync(x => x.Id == id);
         }
 
+        public async Task<bool> IsFriendsWith(string userId, string friendId)
+        {
+            User user = await AppDbContext.Users.Include(x => x.Following).SingleOrDefaultAsync(x => x.Id == userId);
+            User friend = await AppDbContext.Users.SingleOrDefaultAsync(x => x.Id == friendId);
+
+            if (user == null || friend == null)
+                return true;
+
+            List<UserFriends> common = user.Following.Where(x => x.FriendId == friend.Id).ToList();
+
+            return common.Count > 0;
+        }
+
         public AppDbContext AppDbContext
         {
             get { return Context as AppDbContext; }

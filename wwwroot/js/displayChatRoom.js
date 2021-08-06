@@ -4,6 +4,7 @@ import $ from 'jquery';
 import * as signalR from '@microsoft/signalr';
 import Message from './Message';
 import axios from 'axios';
+import moment from 'moment';
 
 var app = document.getElementById('root');
 
@@ -14,6 +15,7 @@ function addLeadingZeros(n) {
 }
 
 function formatDate(date, isFullDate) {
+    console.log(date);
     date = new Date(date);
     var year = date.getFullYear();
     var month = date.getMonth() + 1;
@@ -124,6 +126,18 @@ function Input({ handleSubmit }) {
 }
 
 function ScrollDownButton() {
+    const [visible, setVisible] = useState(true);
+
+    useEffect(() => {
+        const scrollHeight = $('#messages')[0].scrollHeight;
+        const clientHeight = $('#messages')[0].clientHeight;
+
+        if (scrollHeight === clientHeight) {
+            setVisible(false);
+        }
+
+    }, []);
+
     const handleClick = e => {
         e.preventDefault();
         $('#messages').animate({ scrollTop: $('#messages')[0].scrollHeight }, 500);
@@ -133,7 +147,7 @@ function ScrollDownButton() {
     // const style = { isVisible ? { visibility: visible } : { visibility: hidden} }; 
 
     return (
-        <button id="scroll-down-button" onClick={handleClick}>Go back</button>
+        <button id="scroll-down-button" style={{ display: (visible ? 'block' : 'none' ) }} onClick={handleClick}>Go back</button>
     );
 }
 
@@ -175,7 +189,7 @@ function Messages({ displayCnt, updateMessages, messages }) {
         axios.get(`/Chat/GetMessages?roomName=${_roomName}&skip=0&size=${displayCnt}`)
             .then(response => response.data)
             .then(list => {
-                dispatch({ type: 'SET_COUNT', payload: { currentCount: displayCnt } });
+                dispatch({ type: 'SET_COUNT', payload: { currentCount: list.length } });
                 updateMessages(list, true);
             })
             .catch(error => console.error(error.toString()));
@@ -185,7 +199,10 @@ function Messages({ displayCnt, updateMessages, messages }) {
     const loadOnScroll = () => {
         const isScrolled = $('#messages')[0].scrollHeight - Math.abs($('#messages')[0].scrollTop) <= $('#messages')[0].clientHeight * 1.3;
 
-        if (isScrolled) {
+        const scrollHeight = $('#messages')[0].scrollHeight;
+        const clientHeight = $('#messages')[0].clientHeight;
+
+        if (isScrolled || scrollHeight == clientHeight) {
             $('#scroll-down-button').fadeOut();
         }
         else {
@@ -236,13 +253,22 @@ function Messages({ displayCnt, updateMessages, messages }) {
                 messages.map(message => {
                     const color = message.sender === 'John Cena' ? '#d15d30' : (message.sender === _user ? '#e053b3' : '#159ea5');
                     let id = message.id;
+                    const display_time = moment(message.sendTime).format('Do MMM hh:mm');
+
 
                     if (id == undefined || id == null || id == 0) {
                         id = message.sendTime + '_' + message.sender;
                     }
 
                     return (
-                        <Message key={id} sendTime={formatDate(message.sendTime, isFullDate)} color={color} sender={message.sender} text={message.text} />
+                        <Message 
+                            key={id}
+                            //sendTime={formatDate(message.sendTime, isFullDate)}
+                            sendTime={display_time}
+                            color={color}
+                            sender={message.sender}
+                            text={message.text}
+                        />
                     );
                 })
             }

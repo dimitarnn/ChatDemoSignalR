@@ -13,10 +13,7 @@ namespace ChatDemoSignalR.Models
         {
             Messages = new List<Message>();
             Notifications = new List<Notification>();
-            //Following = new List<UserFriends>();
-            //FollowedBy = new List<UserFriends>();
-
-            //Friends = new List<User>();
+            FriendRequests = new List<FriendRequest>();
         }
 
         [Required]
@@ -31,13 +28,13 @@ namespace ChatDemoSignalR.Models
 
         public ICollection<ChatRoom> ChatRooms { get; set; }
 
-        //public ICollection<ChatRoomUser> ChatRoomUsers { get; set; }
-
         public ICollection<UserFriends> Following { get; set; }
 
         public ICollection<UserFriends> FollowedBy { get; set; }
 
         public ICollection<Notification> Notifications { get; set; }
+
+        public ICollection<FriendRequest> FriendRequests { get; set; }
 
     }
 }

@@ -69,5 +69,45 @@ namespace ChatDemoSignalR.Controllers
 
             return Ok();
         }
+
+        public async Task<IActionResult> Read(string text, string userId)
+        {
+            List<Notification> notifications = _unitOfWork.Notifications.Find(x => x.Text == text && x.UserId == userId).ToList();
+
+            if (notifications.Count == 0)
+                return BadRequest();
+
+            Notification notification = notifications[0];
+            int id = notification.Id;
+
+            await _unitOfWork.Notifications.ReadNotification(id);
+            await _unitOfWork.Complete();
+
+            return Ok();
+        }
+
+        public async Task<IActionResult> UnreadNotification(int notificationId)
+        {
+            await _unitOfWork.Notifications.UnreadNotification(notificationId);
+            await _unitOfWork.Complete();
+
+            return Ok();
+        }
+
+        public async Task<IActionResult> Unread(string text, string userId)
+        {
+            List<Notification> notifications = _unitOfWork.Notifications.Find(x => x.Text == text && x.UserId == userId).ToList();
+
+            if (notifications.Count == 0)
+                return BadRequest();
+
+            Notification notification = notifications[0];
+            int id = notification.Id;
+
+            await _unitOfWork.Notifications.UnreadNotification(id);
+            await _unitOfWork.Complete();
+
+            return Ok();
+        }
     }
 }

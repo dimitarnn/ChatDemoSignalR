@@ -17,12 +17,14 @@ namespace ChatDemoSignalR.Repository
             Users = new UserRepository(_context);
             Messages = new MessageRepository(_context);
             Notifications = new NotificationRepository(_context);
+            FriendRequests = new FriendRequestRepository(_context);
         }
 
         public IChatRepository ChatRooms { get; private set; }
         public IUserRepository Users { get; private set; }
         public IMessageRepository Messages { get; private set; }
         public INotificationRepository Notifications { get; private set; }
+        public IFriendRequestRepository FriendRequests { get; private set; }
 
         public async Task<int> Complete()
         {

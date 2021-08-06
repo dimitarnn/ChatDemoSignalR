@@ -10,6 +10,8 @@ namespace ChatDemoSignalR.Repository
     {
         Task<TEntity> Get(string id);
 
+        Task<TEntity> Get(int id);
+
         Task<IEnumerable<TEntity>> GetAll();
 
         IEnumerable<TEntity> Find(Expression<Func<TEntity, bool>> predicate);

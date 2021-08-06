@@ -15,6 +15,8 @@ namespace ChatDemoSignalR.Repository
 
         INotificationRepository Notifications { get; }
 
+        IFriendRequestRepository FriendRequests { get; }
+
         Task<int> Complete();
     }
 }

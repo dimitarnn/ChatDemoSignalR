@@ -24,5 +24,7 @@ namespace ChatDemoSignalR.Repository
 
         Task<IEnumerable<User>> GetUsersWithFollowedAndFollowing(string id);
 
+        Task<bool> IsFriendsWith(string userId, string friendId);
+
     }
 }

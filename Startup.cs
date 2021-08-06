@@ -43,6 +43,7 @@ namespace ChatDemoSignalR
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IMessageRepository, MessageRepository>();
             services.AddScoped<INotificationRepository, NotificationRepository>();
+            services.AddScoped<IFriendRequestRepository, FriendRequestRepository>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
         }
 

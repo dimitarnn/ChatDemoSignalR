@@ -106,7 +106,7 @@ namespace ChatDemoSignalR.Controllers
 
         // for react test page
         [Authorize]
-        public async Task<IActionResult> GetAllUsers()
+        public async Task<IActionResult> GetPrivateChats()
         {
             string userId = _userManager.GetUserId(User);
             User user = await _unitOfWork.Users.GetUserWithFollowing(userId);
@@ -269,13 +269,20 @@ namespace ChatDemoSignalR.Controllers
 
             // notification
             string notificationText = $"New message in {roomName} at " + String.Format("{0:HH:mm:ss dd/MM/yy}", DateTime.Now);
+            string source = String.Format("/Chat/DisplayChatRoom?roomName={0}", roomName);
             Notification notification;
 
             foreach (var member in chatRoom.Users)
             {
                 if (member.Id == userId)
                     continue;
-                notification = new Notification { UserId = member.Id, User = member, Text = notificationText };
+                notification = new Notification
+                {
+                    UserId = member.Id,
+                    User = member,
+                    Text = notificationText,
+                    Source = source
+                };
                 _unitOfWork.Notifications.Add(notification);
             }
 
@@ -356,6 +363,9 @@ namespace ChatDemoSignalR.Controllers
 
             ChatRoom chatRoom = await _unitOfWork.ChatRooms.GetRoomWithUsers(roomName);
 
+            if (chatRoom.ChatType == ChatType.Private)
+                return BadRequest();
+
             if (chatRoom == null)
             {
                 return NotFound("Room not found");
@@ -366,6 +376,34 @@ namespace ChatDemoSignalR.Controllers
                 chatRoom.Users.Add(user);
                 await _unitOfWork.Complete();
             }
+
+            return Ok();
+        }
+
+        public async Task<IActionResult> CreatePrivateRoom(string user1Id, string user2Id)
+        {
+            User user1 = await _unitOfWork.Users.Get(user1Id);
+            User user2 = await _unitOfWork.Users.Get(user2Id);
+
+            int cmp = String.Compare(user1.Id, user2.Id);
+            string roomName = (cmp <= 0 ? user1.Id : user2.Id) + "_" + (cmp <= 0 ? user2.Id : user1.Id);
+
+            ChatRoom room = await _unitOfWork.ChatRooms.GetByName(roomName);
+
+            if (room != null)
+                return BadRequest();
+
+            room = new ChatRoom
+            {
+                ChatType = ChatType.Private,
+                RoomName = roomName
+            };
+
+            room.Users.Add(user1);
+            room.Users.Add(user2);
+
+            _unitOfWork.ChatRooms.Add(room);
+            await _unitOfWork.Complete();
 
             return Ok();
         }

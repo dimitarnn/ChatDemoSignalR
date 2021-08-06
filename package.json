@@ -9,6 +9,8 @@
     "@microsoft/signalr": "^5.0.6",
     "axios": "^0.21.1",
     "babel-loader": "^8.2.2",
+    "eslint": "^7.32.0",
+    "eslint-plugin-react": "^7.24.0",
     "jquery": "^3.6.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
@@ -16,6 +18,10 @@
     "webpack-cli": "^4.7.0"
   },
   "scripts": {
-    "build": "webpack"
+    "build": "webpack",
+    "watch": "webpack --watch"
+  },
+  "dependencies": {
+    "moment": "^2.29.1"
   }
 }

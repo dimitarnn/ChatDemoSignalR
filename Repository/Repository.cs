@@ -21,6 +21,11 @@ namespace ChatDemoSignalR.Repository
             return await Context.Set<TEntity>().FindAsync(id);
         }
 
+        public async Task<TEntity> Get(int id)
+        {
+            return await Context.Set<TEntity>().FindAsync(id);
+        }
+
         public async Task<IEnumerable<TEntity>> GetAll()
         {
             return await Context.Set<TEntity>().ToListAsync();

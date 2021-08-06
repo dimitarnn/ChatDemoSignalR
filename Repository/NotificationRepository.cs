@@ -47,6 +47,17 @@ namespace ChatDemoSignalR.Repository
             AppDbContext.Notifications.Update(notification);
         }
 
+        public async Task UnreadNotification(int notificationId)
+        {
+            Notification notification = await AppDbContext.Notifications.SingleOrDefaultAsync(x => x.Id == notificationId);
+
+            if (notification == null)
+                return;
+
+            notification.IsRead = false;
+            AppDbContext.Notifications.Update(notification);
+        }
+
         public AppDbContext AppDbContext
         {
             get { return Context as AppDbContext; }

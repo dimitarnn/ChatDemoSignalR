@@ -1,9 +1,50 @@
-﻿<div>
-    <form asp-controller="Account" asp-action="Login">
-        <input type="text" name="username" placeholder="Username" />
-        <input type="password" name="password" placeholder="Password" />
-        <button type="submit">Submit</button>
-    </form>
+﻿<div class="main-container">
+    <div class="center-div">
+        <div class="form">
+            <input id="copy-input" value="M3ssage_Sender@gmail.com" class="form-input" />
+        </div>
+        <button type="button" class="form-button" onclick="copy()">Copy</button>
+        <button type="button" class="form-button" onclick="reset()">Reset</button>
+    </div>
+    <div class="center-div">
+        <form asp-controller="Account" asp-action="Login">
+            <div class="form">
+                <input type="text" id="username" name="username" class="form-input" placeholder=" " autocomplete="off" />
+                <label for="username" class="form-label">Username</label>
+            </div>
+            <div class="form">
+                <input type="password" id="password" name="password" class="form-input" placeholder=" " autocomplete="off" />
+                <label for="password" class="form-label">Password</label>
+            </div>
+            <button type="submit" class="form-button">Submit</button>
+        </form>
+        <button type="button" class="form-button" onclick="resetForm()">Reset Form</button>
+        <a asp-controller="Account" asp-action="Register" class="form-button">Register</a>
+    </div>
+
+
 </div>
 
-<a asp-controller="Account" asp-action="Register">Register</a>
+@section Scripts {
+    <script>
+        function copy() {
+            var text = document.getElementById('copy-input');
+            text.select();
+            text.setSelectionRange(0, 99999);
+            document.execCommand("copy");
+        }
+
+        function reset() {
+            var input = document.getElementById('copy-input');
+            input.value = 'M3ssage_Sender@gmail.com';
+        }
+
+        function resetForm() {
+            var username = document.getElementById('username');
+            var password = document.getElementById('password');
+            username.value = '';
+            password.value = '';
+        }
+
+    </script>
+}

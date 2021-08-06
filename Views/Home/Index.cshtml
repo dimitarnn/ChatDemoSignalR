@@ -2,19 +2,29 @@
     ViewData["Title"] = "Home Page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="main-container">
+    <div class="center-div">
+        <div class="text-center">
+            <h1 class="display-4">Welcome</h1>
+            <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+        </div>
+
+        <div class="text-center">
+            <div class="form">
+                <input type="text" id="email" class="form-input" autocomplete="off" placeholder=" " />
+                <label for="email" class="form-label">Email</label>
+            </div>
+        </div>
+
+        <a class="btn btn-success" asp-controller="Home" asp-action="TestView">Go to Test View</a>
+
+        <div id="root">
+
+        </div>
+    </div>
 </div>
 
-
-<a class="btn btn-success" asp-controller="Home" asp-action="TestView">Go to Test View</a>
-
-<div id="root">
-
-</div>
-
-@section Scripts {
+@*@section Scripts {
     <script src="~/js/dist/main.bundle.js"></script>
     <script>
         $.get('/Chat/GetAllUsers', function (list) {
@@ -24,4 +34,4 @@
             console.log(error);
         });
     </script>
-}
+}*@

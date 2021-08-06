@@ -15,5 +15,7 @@ namespace ChatDemoSignalR.Repository
         Task<int> GetCount();
 
         Task ReadNotification(int notificationId);
+
+        Task UnreadNotification(int notificationId);
     }
 }
