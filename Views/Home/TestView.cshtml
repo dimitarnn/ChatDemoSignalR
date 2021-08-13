@@ -1,75 +1,9 @@
-﻿@{
-    Layout = "";
-}
-
-@*<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />*@
-<link rel="stylesheet" href="~/css/site.css" />
-<link rel="stylesheet" href="~/css/chat.css" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.0-2/css/all.min.css">
-<link rel="stylesheet" href="~/css/navigation.css" />
-<link rel="stylesheet" href="~/css/notifications.css" />
-<link rel="stylesheet" href="~/css/displayRooms.css" />
-
-
-<header>
-    <h1 class="logo">Logo</h1>
-    <input type="checkbox" id="nav-toggle" class="nav-toggle" />
-    <input type="checkbox" id="notification-trigger" class="notification-trigger" />
-    <nav>
-        <ul>
-            <li><a asp-controller="Home" asp-action="Index">Home</a></li>
-            <li><a asp-controller="Chat" asp-action="PersonalPage">Personal Page</a></li>
-            <li><a asp-controller="Chat" asp-action="DisplayRooms">Chat Rooms</a></li>
-            @if (_signInManager.IsSignedIn(User))
-            {
-                <li><a href="#">Signed in as: @User.Identity.Name</a></li>
-                <li><a asp-controller="Account" asp-action="Logout">Logout</a></li>
-            }
-            else
-            {
-                <li><a asp-controller="Account" asp-action="Login">Login</a></li>
-                <li><a asp-controller="Account" asp-action="Register">Register</a></li>
-            }
-        </ul>
-    </nav>
-    <div class="notification-bubble">
-        <label for="notification-trigger" class="notification-trigger-label">
-        </label>
-        <div id="notifications"></div>
-    </div>
-    <label for="nav-toggle" class="nav-toggle-label">
-        <span></span>
-    </label>
-</header>
-
-@*<div class="notification-trigger">*@
-
-@*</div>*@
-
+﻿
 <div class="main-container">
     <div id="root"></div>
-    @*@for (int i = 0; i < 15; ++i)
-    {
-        <div class="content">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Magna sit amet
-            purus gravida quis blandit turpis cursus. Quis viverra nibh cras pulvinar mattis nunc sed blandit. Id neque aliquam vestibulum morbi
-            blandit cursus. Commodo nulla facilisi nullam vehicula ipsum a. Vestibulum lectus mauris ultrices eros in cursus. Scelerisque viverra
-            mauris in aliquam. Arcu vitae elementum curabitur vitae nunc sed velit dignissim sodales. Facilisis gravida neque convallis a cras.
-            Potenti nullam ac tortor vitae purus faucibus ornare. Sit amet mattis vulputate enim nulla aliquet porttitor lacus luctus. Diam vel
-            quam elementum pulvinar etiam. Metus dictum at tempor commodo ullamcorper a. Blandit massa enim nec dui nunc mattis. Ultrices mi tempus
-            imperdiet nulla. Ullamcorper malesuada proin libero nunc consequat interdum varius. Lobortis scelerisque fermentum dui faucibus in ornare
-            quam viverra orci.
-        </div>
-    }*@
-
-    @*@RenderBody();*@
 </div>
 
-<script src="~/lib/jquery/dist/jquery.min.js"></script>
-<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-<script src="~/lib/microsoft/signalr/dist/browser/signalr.js"></script>
-<script src="~/js/site.js" asp-append-version="true"></script>
-<script src="~/js/dist/notifications.bundle.js"></script>
-<script src="~/js/dist/displayRooms.bundle.js"></script>
-
-@*@RenderSection("Scripts", required: false);*@
+@section Scripts
+{
+    <script src="~/js/dist/main.bundle.js"></script>
+}

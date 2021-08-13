@@ -6,6 +6,8 @@ using ChatDemoSignalR.Data;
 using ChatDemoSignalR.Hubs;
 using ChatDemoSignalR.Models;
 using ChatDemoSignalR.Repository;
+using ChatDemoSignalR.Services;
+using ChatDemoSignalR.Settings;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -33,11 +35,17 @@ namespace ChatDemoSignalR
             services.AddMvc();
             services.AddSignalR();
 
+            services.Configure<MailSettings>(Configuration.GetSection("MailSettings"));
+
             services.AddDbContext<AppDbContext>(options => 
                 options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
 
-            services.AddIdentity<User, IdentityRole>()
-                .AddEntityFrameworkStores<AppDbContext>();
+            services.AddIdentity<User, IdentityRole>(config =>
+            {
+                config.SignIn.RequireConfirmedEmail = true;
+            })
+                .AddEntityFrameworkStores<AppDbContext>()
+                .AddDefaultTokenProviders();
 
             services.AddScoped<IChatRepository, ChatRepository>();
             services.AddScoped<IUserRepository, UserRepository>();
@@ -45,6 +53,7 @@ namespace ChatDemoSignalR
             services.AddScoped<INotificationRepository, NotificationRepository>();
             services.AddScoped<IFriendRequestRepository, FriendRequestRepository>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
+            services.AddTransient<IMailService, MailService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

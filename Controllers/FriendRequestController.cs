@@ -135,9 +135,10 @@ namespace ChatDemoSignalR.Controllers
                     continue;
 
                 bool hasSent = await _unitOfWork.FriendRequests.HasSent(userId, user.Id);
+                bool hasReceived = await _unitOfWork.FriendRequests.HasSent(user.Id, userId);
                 bool isFriendsWith = await _unitOfWork.Users.IsFriendsWith(userId, user.Id);
 
-                if (!hasSent && !isFriendsWith)
+                if (!hasSent && !isFriendsWith && !hasReceived)
                     available.Add(user);
             }
 

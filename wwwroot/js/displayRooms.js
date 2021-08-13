@@ -62,10 +62,12 @@ function ChatRoom({ roomName }) {
 
 function ChatRoomsContainer() {
     const [rooms, setRooms] = useState([]);
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         const url = '/Chat/GetChatRooms';
         console.log('Fetching Rooms from database');
+        setLoading(true);
 
         axios(url)
             .then(response => {
@@ -76,7 +78,8 @@ function ChatRoomsContainer() {
             })
             .catch(error => {
                 console.log(error);
-            });
+            })
+            .finally(() => setLoading(false));
     }, [])
 
     const addRoom = room => {
@@ -88,6 +91,7 @@ function ChatRoomsContainer() {
             <Input addRoom={addRoom} />
             <div id="chat-rooms-container">
                 {
+                    loading ? <span>Loading...</span> :
                     rooms.map(room => {
                         return <ChatRoom key={room.roomName} roomName={room.roomName} />
                     })

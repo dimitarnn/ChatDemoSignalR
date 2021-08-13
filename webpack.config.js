@@ -9,7 +9,8 @@ module.exports = {
         notifications: './wwwroot/js/notificationsScript.js',
         displayRooms: './wwwroot/js/displayRooms.js',
         listPendingFriendRequests: './wwwroot/js/listPendingFriendRequests.js',
-        listAvailable: './wwwroot/js/listAvailable.js'
+        listAvailable: './wwwroot/js/listAvailable.js',
+        displayAvailableRooms: './wwwroot/js/displayAvailableRooms.js'
     },
     output: {
         path: path.resolve(__dirname, './wwwroot/js/dist'),

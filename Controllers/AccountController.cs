@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using ChatDemoSignalR.Repository;
+using ChatDemoSignalR.Services;
 
 namespace ChatDemoSignalR.Controllers
 {
@@ -21,16 +22,19 @@ namespace ChatDemoSignalR.Controllers
         private readonly UserManager<User> _userManager;
         private readonly IHubContext<MessageHub> _chat;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IMailService _mailService;
 
         public AccountController(SignInManager<User> signInManager,
             UserManager<User> userManager,
             IHubContext<MessageHub> chat,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IMailService mailService)
         {
             _signInManager = signInManager;
             _userManager = userManager;
             _chat = chat;
             _unitOfWork = unitOfWork;
+            _mailService = mailService;
         }
 
         [HttpGet]
@@ -78,8 +82,21 @@ namespace ChatDemoSignalR.Controllers
 
             if (result.Succeeded)
             {
-                await _signInManager.SignInAsync(user, isPersistent: false);
-                return RedirectToAction("Index", "Home");
+                // generate email token
+                var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                var link = Url.Action(nameof(VerifyEmail), "Account", new { userId = user.Id, token }, Request.Scheme, Request.Host.ToString());
+
+                ConfirmationEmail request = new ConfirmationEmail
+                {
+                    ToEmail = user.Email,
+                    UserName = user.UserName
+                };
+
+                await _mailService.SendConfirmationEmail(request, link);
+
+                return RedirectToAction("EmailVerification");
+                //await _signInManager.SignInAsync(user, isPersistent: false);
+                //return RedirectToAction("Index", "Home");
             }
 
             foreach (var error in result.Errors)
@@ -87,6 +104,27 @@ namespace ChatDemoSignalR.Controllers
                 ModelState.AddModelError("", error.Description);
             }
 
+            return View();
+        }
+
+        public async Task<IActionResult> VerifyEmail(string userId, string token)
+        {
+            User user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return BadRequest();
+
+            var result = await _userManager.ConfirmEmailAsync(user, token);
+
+            if (result.Succeeded)
+            {
+                return View();
+            }
+
+            return BadRequest();
+        }
+
+        public IActionResult EmailVerification()
+        {
             return View();
         }
 

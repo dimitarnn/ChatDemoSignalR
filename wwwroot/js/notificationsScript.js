@@ -96,6 +96,7 @@ function NotificationsContainer({ displayCnt }) {
                     dispatch({ type: 'UPDATE_FETCHING', payload: { isFetching: false } });
                 })
                 .catch(error => console.error(error.toString()));
+                //.finally(() => dispatch({ type: 'UPDATE_FETCHING', payload: { isFetching: false } }));
         }
     }
 
@@ -149,7 +150,8 @@ function NotificationsContainer({ displayCnt }) {
             .catch(error => console.error(error.toString()));
 
         connection.on('ReceiveNotification', notification => {
-            //console.log(' *** received notification *** ');
+            console.log(' *** received notification *** ');
+            console.log(notification);
 
             const index = Math.ceil(state.currentCount / displayCnt) + 1;
             const url = '/Notification/LoadNotifications';

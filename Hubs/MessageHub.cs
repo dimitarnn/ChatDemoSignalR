@@ -41,6 +41,7 @@ namespace ChatDemoSignalR.Hubs
                     UserId = user.Id,
                     User = user,
                     Text = notification.Text,
+                    Source = notification.Source,
                     CreationTime = notification.CreationTime
                 };
 

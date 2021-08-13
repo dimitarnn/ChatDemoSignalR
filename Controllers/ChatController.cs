@@ -58,10 +58,30 @@ namespace ChatDemoSignalR.Controllers
             return ciphertext;
         }
 
+        [HttpGet]
+        [Authorize]
+        public IActionResult DisplayAvailableRooms()
+        {
+            return View();
+        }
+
         public async Task<IActionResult> Index()
         {
             List<ChatRoom> rooms = (await _unitOfWork.ChatRooms.GetAll()).ToList();
             return View(rooms);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAvailableRooms()
+        {
+            User user = await _userManager.GetUserAsync(User);
+
+            if (user == null)
+                return BadRequest();
+
+            List<ChatRoom> rooms = (await _unitOfWork.ChatRooms.GetRoomsNotContainingUser(user)).ToList();
+
+            return Ok(rooms);
         }
 
         public async Task<IActionResult> ListRooms()
@@ -79,6 +99,7 @@ namespace ChatDemoSignalR.Controllers
             return View(rooms);
         }
 
+        [HttpGet]
         public async Task<IActionResult> GetChatRooms()
         {
             List<ChatRoom> rooms = (await _unitOfWork.ChatRooms.GetAllChatRooms()).ToList();
@@ -257,41 +278,58 @@ namespace ChatDemoSignalR.Controllers
             var message = new Message { Text = text, Sender = sender, SendTime = DateTime.Now };
             ChatRoom chatRoom = await _unitOfWork.ChatRooms.GetRoomWithUsers(roomName);
 
-            if (chatRoom != null)
+            if (chatRoom == null)
+                return BadRequest();
+
+            if (chatRoom.Messages == null)
             {
-                if (chatRoom.Messages == null)
-                {
-                    chatRoom.Messages = new List<Message>();
-                }
-                
-                chatRoom.Messages.Add(message);
+                chatRoom.Messages = new List<Message>();
             }
 
-            // notification
-            string notificationText = $"New message in {roomName} at " + String.Format("{0:HH:mm:ss dd/MM/yy}", DateTime.Now);
-            string source = String.Format("/Chat/DisplayChatRoom?roomName={0}", roomName);
-            Notification notification;
+            chatRoom.Messages.Add(message);
 
-            foreach (var member in chatRoom.Users)
+            // notification
+            Notification notification;
+            string notificationText = "-";
+            string source = "";
+
+            if (_signInManager.IsSignedIn(User))
             {
-                if (member.Id == userId)
-                    continue;
-                notification = new Notification
+                if (chatRoom.ChatType == ChatType.Room)
                 {
-                    UserId = member.Id,
-                    User = member,
-                    Text = notificationText,
-                    Source = source
-                };
-                _unitOfWork.Notifications.Add(notification);
+                    notificationText = $"New message in {roomName} at " + String.Format("{0:HH:mm:ss dd/MM/yy}", DateTime.Now);
+                    source = String.Format("/Chat/DisplayChatRoom?roomName={0}", roomName);
+                }
+                else if (chatRoom.ChatType == ChatType.Private)
+                {
+                    notificationText = $"New message from {sender} at " + String.Format("{0:HH:mm:ss dd/MM/yy}", DateTime.Now);
+                    string friendId = userId ?? "";
+
+                    source = String.Format("/Chat/DisplayPrivateChat?friendId={0}", friendId);
+                }
+
+                foreach (var member in chatRoom.Users)
+                {
+                    if (member.Id == userId)
+                        continue;
+                    notification = new Notification
+                    {
+                        UserId = member.Id,
+                        User = member,
+                        Text = notificationText,
+                        Source = source
+                    };
+                    _unitOfWork.Notifications.Add(notification);
+                }
             }
 
             await _unitOfWork.Complete();
 
+
             notification = null;
 
             if (_signInManager.IsSignedIn(User))
-                notification = new Notification { UserId = userId, Text = notificationText };
+                notification = new Notification { UserId = userId, Text = notificationText, Source = source };
 
             MessageNotificationVM model = new MessageNotificationVM
             {
@@ -357,6 +395,7 @@ namespace ChatDemoSignalR.Controllers
         }
 
         [Authorize]
+        [HttpPost]
         public async Task<IActionResult> JoinRoom(string roomName)
         {
             var user = await _userManager.GetUserAsync(User);
