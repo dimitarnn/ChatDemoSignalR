@@ -58,7 +58,7 @@ namespace ChatDemoSignalR.Controllers
             if (userId == null)
                 return Ok(0);
 
-            int count = await _unitOfWork.Notifications.GetCount();
+            int count = await _unitOfWork.Notifications.GetUserNotificationsCount(userId);
             return Ok(count);
         }
 
@@ -70,9 +70,16 @@ namespace ChatDemoSignalR.Controllers
             return Ok();
         }
 
-        public async Task<IActionResult> Read(string text, string userId)
+        [HttpPost]
+        public async Task<IActionResult> Read(DateTime creationTime, string text, string userId)
         {
-            List<Notification> notifications = _unitOfWork.Notifications.Find(x => x.Text == text && x.UserId == userId).ToList();
+            List<Notification> notifications = _unitOfWork.Notifications
+                .Find(x => x.CreationTime == creationTime &&
+                           x.UserId == userId &&
+                           x.Text == text)
+                .ToList();
+
+            List<Notification> test = _unitOfWork.Notifications.Find(x => x.Text == text).ToList();
 
             if (notifications.Count == 0)
                 return BadRequest();
@@ -94,9 +101,14 @@ namespace ChatDemoSignalR.Controllers
             return Ok();
         }
 
-        public async Task<IActionResult> Unread(string text, string userId)
+        [HttpPost]
+        public async Task<IActionResult> Unread(DateTime creationTime, string text, string userId)
         {
-            List<Notification> notifications = _unitOfWork.Notifications.Find(x => x.Text == text && x.UserId == userId).ToList();
+            List<Notification> notifications = _unitOfWork.Notifications
+                .Find(x => x.CreationTime == creationTime &&
+                           x.UserId == userId &&
+                           x.Text == text)
+                .ToList();
 
             if (notifications.Count == 0)
                 return BadRequest();

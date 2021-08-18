@@ -14,6 +14,7 @@ namespace ChatDemoSignalR.Models
             Messages = new List<Message>();
             Notifications = new List<Notification>();
             FriendRequests = new List<FriendRequest>();
+            JoinRoomRequests = new List<JoinRoomRequest>();
         }
 
         [Required]
@@ -35,6 +36,8 @@ namespace ChatDemoSignalR.Models
         public ICollection<Notification> Notifications { get; set; }
 
         public ICollection<FriendRequest> FriendRequests { get; set; }
+
+        public ICollection<JoinRoomRequest> JoinRoomRequests { get; set; }
 
     }
 }

@@ -8,12 +8,23 @@ namespace ChatDemoSignalR.Repository
 {
     public interface IChatRepository : IRepository<ChatRoom>
     {
-
+        Task<IEnumerable<ChatRoom>> GetRoomsContaining(User user);
+        
         Task<IEnumerable<ChatRoom>> GetAllChatRooms();
+
+        Task<IEnumerable<ChatRoom>> GetPublicRooms();
 
         Task<IEnumerable<ChatRoom>> GetAllPrivateRooms();
 
+        Task<IEnumerable<ChatRoom>> GetAllInviteOnly();
+
+        Task<IEnumerable<ChatRoom>> GetAllEphemeral();
+
+        Task<IEnumerable<ChatRoom>> GetAvailable(User user);
+
         Task<IEnumerable<ChatRoom>> GetRoomsNotContainingUser(User user);
+
+        Task<IEnumerable<ChatRoom>> GetChatRoomsCreatedBy(string userId);
 
         Task<ChatRoom> GetByName(string roomName);
 
@@ -24,6 +35,8 @@ namespace ChatDemoSignalR.Repository
         Task<ChatRoom> GetRoomWithUsersAndMessages(string roomName);
 
         Task<bool> ContainsRoom(string roomName);
+
+        Task<bool> RoomContainsUser(string roomName, User user);
 
     }
 }

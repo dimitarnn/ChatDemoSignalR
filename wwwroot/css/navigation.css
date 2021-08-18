@@ -18,7 +18,8 @@ body {
 
 .main-container {
     /*margin-top: 5rem;*/
-    margin: 7rem 1rem 0 1rem;
+    position: relative;
+    margin: 7rem 0 0 0;
     font-size: 1.2em;
     height: calc(100vh - 9rem);
     color: #fff;
@@ -31,6 +32,7 @@ body {
 /* navigation styles start */
 
 header {
+    left: 0;
     top: 0;
     background: var(--background);
     text-align: center;

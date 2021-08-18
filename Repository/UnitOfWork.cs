@@ -18,6 +18,7 @@ namespace ChatDemoSignalR.Repository
             Messages = new MessageRepository(_context);
             Notifications = new NotificationRepository(_context);
             FriendRequests = new FriendRequestRepository(_context);
+            JoinRoomRequests = new JoinRoomRequestRepository(_context);
         }
 
         public IChatRepository ChatRooms { get; private set; }
@@ -25,6 +26,7 @@ namespace ChatDemoSignalR.Repository
         public IMessageRepository Messages { get; private set; }
         public INotificationRepository Notifications { get; private set; }
         public IFriendRequestRepository FriendRequests { get; private set; }
+        public IJoinRoomRequestRepository JoinRoomRequests { get; private set; }
 
         public async Task<int> Complete()
         {

@@ -1,38 +1,66 @@
 ﻿import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import axios from 'axios';
+import * as SignalR from '@microsoft/signalr';
+import Pagination from './Pagination';
+import PaginationInput from './PaginationInput';
 
 var app = document.getElementById('root');
 
-function User({ user, removeUser }) {
+function User({ user, removeUser, connection }) {
     const [available, setAvailable] = useState(true);
 
     const handleClick = () => {
         const url = `/FriendRequest/SendFriendRequest?userId=${user.id}`;
         axios.get(url)
-            .then(() => {
+            .then(response => response.data)
+            .then(notification => {
                 console.log('freind request sent');
                 setAvailable(false);
+                if (notification != null &&
+                    notification != undefined &&
+                    notification.userId != null &&
+                    notification.userId != undefined
+                )
+                    connection.invoke('SendNotificationToUserId', notification.userId, notification);
             })
             .catch(error => console.error(error.toString()));
     }
 
     return (
-        <div className="card">
-            <div className="card-header">
-                {user.userName}
-            </div>
-            <div className="card-body">
-                {
-                    available ? <a className="btn-dark" onClick={handleClick}>Send Friend Request</a> : <a className="btn-success">Request Sent!</a>
-                }
+        <div className='black-card user'>
+            <div className='card-box'>
+                <div className='card-content'>
+                    <h2>Add</h2>
+                    <h3>{user.userName}</h3>
+                    {
+                        available ? <a onClick={handleClick}>Send Friend Request</a> :
+                            <a href='#' className='joined'>Request Sent!</a>
+                    }
+                </div>
             </div>
         </div>
+        //<div className="card">
+        //    <div className="card-header">
+        //        {user.userName}
+        //    </div>
+        //    <div className="card-body">
+        //        {
+        //            available ? <a className="btn-dark" onClick={handleClick}>Send Friend Request</a> : <a className="btn-success">Request Sent!</a>
+        //        }
+        //    </div>
+        //</div>
     );
 }
 
 function UsersContainer() {
+    const [loading, setLoading] = useState(false);
     const [users, setUsers] = useState([]);
+    const [connection, setConnection] = useState(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [tmpPage, setTmpPage] = useState(1);
+    const [usersPerPage, setUsersPerPage] = useState(9);
+    const [currentUsers, setCurrentUsers] = useState([]);
 
     const removeUser = user => {
         let usersArray = [...users];
@@ -41,7 +69,57 @@ function UsersContainer() {
     }
 
     useEffect(() => {
+        const indexOfLastUser = currentPage * usersPerPage;
+        const indexOfFirstUser = indexOfLastUser - usersPerPage;
+        setCurrentUsers(users.slice(indexOfFirstUser, indexOfLastUser));
+    }, [users]);
+
+    useEffect(() => {
+        setTmpPage(currentPage);
+        const indexOfLastUser = currentPage * usersPerPage;
+        const indexOfFirstUser = indexOfLastUser - usersPerPage;
+        setCurrentUsers(users.slice(indexOfFirstUser, indexOfLastUser));
+    }, [currentPage]);
+
+    const handleChange = e => {
+        setTmpPage(e.target.value);
+    }
+
+    const handleClick = () => {
+        let input = tmpPage;
+
+        if (isNaN(tmpPage) || isNaN(parseFloat(tmpPage))) {
+            setTmpPage(1);
+            setCurrentPage(1);
+            return;
+        }
+        else if ((tmpPage - Math.floor(tmpPage)) !== 0) {
+            setTmpPage(1);
+            setCurrentPage(1);
+            return;
+        }
+
+        const pagesCnt = Math.ceil(users.length / usersPerPage);
+        input = input < 1 ? 1 : input;
+        input = input > pagesCnt ? pagesCnt : input;
+        setTmpPage(input);
+        setCurrentPage(input);
+    }
+
+    const paginate = pageNumber => setCurrentPage(pageNumber);
+
+    const nextPage = () => {
+        const pagesCnt = Math.ceil(users.length / usersPerPage);
+        setCurrentPage(prevPage => prevPage == pagesCnt ? pagesCnt : prevPage + 1);
+    }
+
+    const previousPage = () => {
+        setCurrentPage(prevPage => prevPage == 1 ? 1 : prevPage - 1);
+    }
+
+    useEffect(() => {
         const url = '/FriendRequest/GetAvailable';
+        setLoading(true);
         axios.get(url)
             .then(response => response.data)
             .then(list => {
@@ -49,19 +127,52 @@ function UsersContainer() {
                 console.log(list);
                 setUsers(list);
             })
-            .catch(error => console.error(error.toString()));
+            .catch(error => console.error(error.toString()))
+            .finally(setLoading(false));
+
+        const connection = new SignalR.HubConnectionBuilder()
+            .withUrl('/messages')
+            .build();
+
+        setConnection(connection);
     }, []);
+
+    useEffect(() => {
+        if (connection == null)
+            return;
+
+        connection.start()
+            .then(() => console.log('Friends list connection established.'))
+            .catch(error => console.error(error.toString()));
+    }, [connection]);
 
     return (
         <div className="contents">
+            <div id='previous-page-mobile' onClick={previousPage}><span>&#8249;</span></div>
+            <div id='next-page-mobile' onClick={nextPage}><span>&#8250;</span></div>
             <div className="card-container">
                 {
-                    users.map(user => {
-                        console.log(user);
-                        return (<User key={user.userName} user={user} removeUser={removeUser} />)
+                    loading ? <span>Loading...</span> :
+                    currentUsers.map(user => {
+                        //console.log(user);
+                        return (<User key={user.userName} user={user} removeUser={removeUser} connection={connection} />)
                     })
                 }
             </div>
+            <Pagination
+                loading={loading}
+                currentPage={currentPage}
+                totalRooms={users.length}
+                roomsPerPage={usersPerPage}
+                paginate={paginate}
+                nextPage={nextPage}
+                previousPage={previousPage}
+            />
+            <PaginationInput
+                tmpPage={tmpPage}
+                handleChange={handleChange}
+                handleClick={handleClick}
+            />
         </div>
     );
 }

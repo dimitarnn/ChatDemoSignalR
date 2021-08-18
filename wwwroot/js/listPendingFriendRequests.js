@@ -1,33 +1,59 @@
 ﻿import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import axios from 'axios';
+import * as SignalR from '@microsoft/signalr';
+import Pagination from './Pagination';
+import PaginationInput from './PaginationInput';
 
 var app = document.getElementById('root');
 
-function Request({ request }) {
+function Request({ request, connection }) {
     const [state, setState] = useState('');
+
+    useEffect(() => {
+        console.log('request:');
+        console.log(request);
+        console.log('request status:');
+        console.log(request.status);
+        let nextState = '';
+        if (request.status == 1)
+            nextState = 'ACCEPTED';
+        else if (request.status == 2)
+            nextState = 'DECLINED';
+        setState(nextState);
+    }, [request]);
 
     const acceptRequest = () => {
         const addFriendUrl = `/User/AddFriend?friendId=${request.senderId}`;
         const acceptRequestUrl = `/FriendRequest/AcceptRequest?id=${request.id}`;
         const createRoomUrl = `/Chat/CreatePrivateRoom?user1Id=${request.userId}&user2Id=${request.senderId}`;
 
-        axios.post(addFriendUrl)
-            .then(() => {
+        axios.post(acceptRequestUrl)    // accepting request
+            .then(response => response.data)
+            .then(notification => {
+                setState('ACCEPTED');
 
-                axios.post(createRoomUrl)
+                console.log('request accepted: ');
+                console.log(request);
+
+                axios.post(createRoomUrl)   // creating private chat room
                     .then(() => {
                         console.log('private room created');
                     })
                     .catch(error => console.error(error.toString()));
 
-                axios.post(acceptRequestUrl)
+                axios.post(addFriendUrl)    // adding friend
                     .then(() => {
-                        console.log('request accepted: ');
-                        console.log(request);
-                        setState('ACCEPTED');
+                        console.log('friend added');
                     })
                     .catch(error => console.error(error.toString()));
+
+                request.status = 1; // accepted
+
+                // send notification
+                console.log('connection: ');
+                console.log(connection);
+                connection.invoke('SendNotificationToUserId', notification.userId, notification);
             })
             .catch(error => console.error(error.toString()));
     }
@@ -39,28 +65,33 @@ function Request({ request }) {
                 console.log('request declined: ');
                 console.log(request);
                 setState('DECLINED');
+                request.status = 2; // declined
             })
             .catch(error => console.error(error.toString()));
     }
 
     return (
-        <div className="card">
-            <div className="card-header">
-                From: {request.senderName}
+        <div className='expanding-card user'>
+            <div className='card-face card-face1'>
+                <div className='card-content'>
+                    <h3>{request.senderName}</h3>
+                </div>
             </div>
-            <div className="card-body">
-                {
-                    state == '' ? <a className="btn-accept" onClick={acceptRequest}>Accept</a> : null
-                }
-                {
-                    state == '' ? <a className="btn-decline" onClick={declineRequest}>Decline</a> : null
-                }
-                {
-                    state == 'ACCEPTED' ? <a className="btn-success">Request accepted!</a> : null
-                }
-                {
-                    state == 'DECLINED' ? <a className="btn-dark">Request declined!</a> : null
-                }
+            <div className='card-face card-face2'>
+                <div className='card-content'>
+                    {
+                        state == '' ? <a onClick={acceptRequest}>Accept</a> : null
+                    }
+                    {
+                        state == '' ? <a onClick={declineRequest}>Decline</a> : null
+                    }
+                    {
+                        state == 'ACCEPTED' ? <a className='joined'>Request accepted!</a> : null
+                    }
+                    {
+                        state == 'DECLINED' ? <a className='joined'>Request declined!</a> : null
+                    }
+                </div>
             </div>
         </div>
     );
@@ -68,10 +99,18 @@ function Request({ request }) {
 
 function RequestsContainer() {
     const [requests, setRequests] = useState([]);
+    const [connection, setConnection] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [tmpPage, setTmpPage] = useState(1);
+    const [currentRequests, setCurrentRequests] = useState([]);
+    const [requestsPerPage, setRequestsPerPage] = useState(2);  // change to 9
 
     useEffect(() => {
         const url = '/FriendRequest/GetPending';
         console.log('component mounted');
+        setLoading(true);
+
         axios.get(url)
             .then(response => {
                 console.log(response);
@@ -82,16 +121,100 @@ function RequestsContainer() {
                 console.log(list);
                 setRequests(list);
             })
-            .catch(error => console.error(error.toString()));
+            .catch(error => console.error(error.toString()))
+            .finally(() => setLoading(false));
+
+        const connection = new SignalR.HubConnectionBuilder()
+            .withUrl('/messages')
+            .build();
+
+        setConnection(connection);
     }, []);
 
+    useEffect(() => {
+        if (connection == null)
+            return;
+
+        connection.start()
+            .then(() => console.log('Friend Request connection established.'))
+            .catch(error => console.error(error.toSTring()));
+    }, [connection]);
+
+    useEffect(() => {
+        const indexOfLastRequest = currentPage * requestsPerPage;
+        const indexOfFirstRequest = indexOfLastRequest - requestsPerPage;
+        setCurrentRequests(requests.slice(indexOfFirstRequest, indexOfLastRequest));
+    }, [requests]);
+
+    useEffect(() => {
+        setTmpPage(currentPage);
+        const indexOfLastRequest = currentPage * requestsPerPage;
+        const indexOfFirstRequest = indexOfLastRequest - requestsPerPage;
+        setCurrentRequests(requests.slice(indexOfFirstRequest, indexOfLastRequest));
+    }, [currentPage]);
+
+    const handleChange = e => {
+        setTmpPage(e.target.value);
+    }
+
+    const handleClick = () => {
+        let input = tmpPage;
+
+        if (isNaN(tmpPage) || isNaN(parseFloat(tmpPage))) {
+            setTmpPage(1);
+            setCurrentPage(1);
+            return;
+        }
+        else if ((tmpPage - Math.floor(tmpPage)) !== 0) {
+            setTmpPage(1);
+            setCurrentPage(1);
+            return;
+        }
+
+        const pagesCnt = Math.ceil(requests.length / requestsPerPage);
+        input = input < 1 ? 1 : input;
+        input = input > pagesCnt ? pagesCnt : input;
+        setTmpPage(input);
+        setCurrentPage(input);
+    }
+
+    const paginate = pageNumber => setCurrentPage(pageNumber);
+
+    const nextPage = () => {
+        const pagesCnt = Math.ceil(requests.length / requestsPerPage);
+        setCurrentPage(prevPage => prevPage == pagesCnt ? pagesCnt : prevPage + 1);
+    }
+
+    const previousPage = () => {
+        setCurrentPage(prevPage => prevPage == 1 ? 1 : prevPage - 1);
+    }
+
     return (
-        <div className="card-container">
-            {
-                requests.map(request => {
-                    return <Request key={request.senderId} request={request} />
-                })
-            }
+        <div>
+            <div id='previous-page-mobile' onClick={previousPage}><span>&#8249;</span></div>
+            <div id='next-page-mobile' onClick={nextPage}><span>&#8250;</span></div>
+            <div className="card-container">
+                {
+                    loading ? <span>Loading...</span> :
+                    currentRequests.map(request => {
+                        return <Request key={request.senderId} request={request} connection={connection} />
+                    })
+                }
+            </div>
+            <Pagination
+                loading={loading}
+                currentPage={currentPage}
+                totalRooms={requests.length}
+                roomsPerPage={requestsPerPage}
+                paginate={paginate}
+                nextPage={nextPage}
+                previousPage={previousPage}
+            />
+            <PaginationInput
+                tmpPage={tmpPage}
+                handleChange={handleChange}
+                handleClick={handleClick}
+            />
         </div>
     );
 

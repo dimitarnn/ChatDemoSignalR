@@ -149,30 +149,90 @@ namespace ChatDemoSignalR.Controllers
         {
             User sender = await _userManager.GetUserAsync(User);
             User receiver = await _unitOfWork.Users.Get(userId);
+            DateTime creationTime = DateTime.Now;
+
+            if ((await _unitOfWork.FriendRequests.HasSent(sender.Id, receiver.Id)))
+                return Ok(null);
+
+            if ((await _unitOfWork.Users.IsFriendsWith(sender.Id, receiver.Id)))
+                return Ok(null);
 
             FriendRequest request = new FriendRequest
             {
+                SendTime = creationTime,
                 UserId = receiver.Id,
                 User = receiver,
                 SenderId = sender.Id,
                 Sender = sender
             };
 
+            // notification
+            Notification notification = new Notification
+            {
+                CreationTime = creationTime,
+                User = receiver,
+                UserId = receiver.Id,
+                Text = $"{sender.UserName} has sent you a friend request!",
+                Source = "/FriendRequest/ListPending"
+            };
+
+            _unitOfWork.Notifications.Add(notification);
+
+            // send the notification, without the users model
+            Notification response = new Notification
+            {
+                CreationTime = creationTime,
+                UserId = receiver.Id,
+                Text = $"{sender.UserName} has sent you a friend request!",
+                Source = "/FriendRequest/ListPending"
+            };
+
             receiver.FriendRequests.Add(request);
             await _unitOfWork.Complete();
 
-            return Ok();
+            return Ok(response);
         }
 
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> AcceptRequest(int id)
         {
+            FriendRequest request = await _unitOfWork.FriendRequests.Get(id);
+            User user = await _userManager.GetUserAsync(User);
+            DateTime creationTime = DateTime.Now;
+
+            if (request == null)
+                return BadRequest();
+
             await _unitOfWork.FriendRequests.Accept(id);
-            // add as a friend
+
+            // notification
+            Notification notification = new Notification
+            {
+                CreationTime = creationTime,
+                UserId = request.SenderId,
+                User = request.Sender,
+                Text = $"{user.UserName} has accepted you friend request!",
+                Source = "/Chat/DisplayAllPrivateChats"
+            };
+
+            _unitOfWork.Notifications.Add(notification);
+
+            Notification response = new Notification    // adding user creates a loop, error 500
+            {
+                CreationTime = creationTime,
+                Id = notification.Id,                   // ?
+                UserId = request.SenderId,
+                Text = $"{user.UserName} has accepted you friend request!",
+                Source = "/Chat/DisplayAllPrivateChats"
+            };
+
             await _unitOfWork.Complete();
-            return Ok();
+
+            return Ok(response);
         }
 
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> DeclineRequest(int id)
         {

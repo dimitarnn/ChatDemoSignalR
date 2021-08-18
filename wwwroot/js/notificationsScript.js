@@ -7,7 +7,7 @@ import axios from 'axios';
 
 var target = document.getElementById('notifications');
 
-function Notification({ data, text, isRead, id }) {
+function Notification({ notification, text, isRead, id }) {
     const classes = 'notification' + (isRead ? ' read' : '');
     const [display, setDisplay] = useState(false);
     const [read, setRead] = useState(isRead);
@@ -16,12 +16,20 @@ function Notification({ data, text, isRead, id }) {
         setDisplay(display => !display);
     };
 
-    const handleNotificationClick = id => {
-        let url = `/Notification/Read?text=${text}&userId=${data.userId}`;
+    const handleNotificationClick = () => {
+        console.log('notification: ');
+        console.log(notification);
+        let url = `/Notification/Read`;
         if (read)
-            url = `/Notification/Unread?text=${text}&userId=${data.userId}`;
+            url = `/Notification/Unread`;
 
-        axios.get(url)
+        axios.post(url, null, {
+            params: {
+                creationTime: notification.creationTime,
+                text: notification.text,
+                userId: notification.userId
+            }
+        })
             .then(() => {
                 setRead(read => !read);
             })
@@ -33,8 +41,8 @@ function Notification({ data, text, isRead, id }) {
         <div onClick={handleClick} className={(read ? 'notification read' : 'notification')}>
                 <span>{text}</span>
                 <div style={{ display: (display ? 'flex' : 'none') }} className='notification-links' >
-                    <a onClick={() => handleNotificationClick(id)}>Mark as read</a>
-                    <a href={data.source}>Open</a>
+                    <a onClick={handleNotificationClick}>Mark as read</a>
+                    <a href={notification.source}>Open</a>
                 </div>
             </div>
             
@@ -68,7 +76,7 @@ function NotificationsContainer({ displayCnt }) {
     const [state, dispatch] = useReducer(reducer, initialState);
 
     const loadOnScroll = () => {
-        if (state.currentCount >= state.total)
+        if (state.notifications.length >= state.total)
             return;
 
         // scroll animations and infinite scroll trigger
@@ -91,7 +99,7 @@ function NotificationsContainer({ displayCnt }) {
             })
                 .then(response => response.data)
                 .then(list => {
-                    dispatch({ type: 'UPDATE_COUNT', payload: { increase: displayCnt } });
+                    dispatch({ type: 'UPDATE_COUNT', payload: { increase: list.length } });
                     dispatch({ type: 'UPDATE_NOTIFICATIONS', payload: { list } });
                     dispatch({ type: 'UPDATE_FETCHING', payload: { isFetching: false } });
                 })
@@ -114,6 +122,8 @@ function NotificationsContainer({ displayCnt }) {
         axios.get(getCountUrl)
             .then(response => response.data)
             .then(count => {
+                console.log('user notifications count:');
+                console.log(count);
                 dispatch({ type: 'UPDATE_TOTAL', payload: { total: count } });
             })
             .catch(error => console.error(error.toString()));
@@ -157,6 +167,7 @@ function NotificationsContainer({ displayCnt }) {
             const url = '/Notification/LoadNotifications';
 
             dispatch({ type: 'PREPEND_NOTIFICATIONS', payload: { list: [notification] } });
+            dispatch({ type: 'UPDATE_COUNT', payload: { increase: 1 } });
         })
     }, [connection]);
 
@@ -165,7 +176,13 @@ function NotificationsContainer({ displayCnt }) {
             {
                 state.notifications.map((notification) => {
                     return (
-                        <Notification data={notification} key={notification.id} text={notification.text} isRead={notification.isRead} id={notification.id} />
+                        <Notification
+                            notification={notification}
+                            key={notification.creationTime + '_' + notification.userId}
+                            text={notification.text}
+                            isRead={notification.isRead}
+                            id={notification.id}
+                        />
                     );
                 })
             }

@@ -24,6 +24,8 @@ namespace ChatDemoSignalR.Data
 
         public DbSet<FriendRequest> FriendRequests { get; set; }
 
+        public DbSet<JoinRoomRequest> JoinRoomRequests { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -31,6 +33,10 @@ namespace ChatDemoSignalR.Data
             builder.Entity<FriendRequest>()
                 .HasOne(fr => fr.User)
                 .WithMany(u => u.FriendRequests);
+
+            //builder.Entity<JoinRoomRequest>()
+            //    .HasOne(r => r.User)
+            //    .WithMany(u => u.JoinRoomRequests);
 
             builder.Entity<UserFriends>()
                 .HasKey(uf => new { uf.UserId, uf.FriendId });

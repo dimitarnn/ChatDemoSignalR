@@ -1,11 +1,13 @@
 ﻿ul.pagination {
-    margin: 0;
+    margin: 2rem auto 0 auto;
     list-style: none;
     display: flex;
     flex-direction: row;
     justify-content: space-between;
     border-radius: 1.2rem;
-    background: #EED6D3;
+    /*background: #EED6D3;*/
+    min-width: 30rem;
+    background: #00D6AA;
     padding: 1rem;
 }
 
@@ -42,16 +44,59 @@ ul.pagination li {
 .page-form {
     font-size: 1.5rem;
     display: grid;
-    width: 20rem;
-    margin: 0;
+    width: 30rem;
+    margin: 0 auto;
     grid-template-columns: min-content min-content;
     grid-column-gap: 1.5rem;
     padding: 1rem;
 }
 
+
+#previous-page-mobile,
+#next-page-mobile {
+    position: fixed;
+    height: 8rem;
+    width: 4rem;
+    /*background: linear-gradient(40deg, #00D6AA 0%, rgb(197, 199, 250) 45%, rgb(233, 242, 254) 100%);*/
+    background: rgba(0, 214, 170, 0.5);
+    color: #000;
+    /*inset: 0;*/
+    top: 0;
+    bottom: 0;
+    margin: auto 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    border: 1px solid #fff;
+    border-radius: 1rem;
+    cursor: pointer;
+    z-index: 100;
+}
+
+#previous-page-mobile {
+    left: 0;
+}
+
+#previous-page-mobile span,
+#next-page-mobile span {
+    font-size: 3rem;
+}
+
+
+#next-page-mobile {
+    right: 0;
+}
+
 @media screen and (min-width: 768px) {
     .page-form {
         margin: 0 auto;
+    }
+
+    #previous-page-mobile,
+    #next-page-mobile {
+        display: none;
+        margin: auto 1rem;
     }
 }
 
@@ -59,16 +104,19 @@ ul.pagination li {
     background: none;
     padding: 1rem;
     border-radius: 1rem;
-    border: .2rem solid #EED6D3;
+    /*border: .2rem solid #EED6D3;*/
+    border: .2rem solid #00D6AA;
     font-size: 1.5rem;
-    color: #fff;
+    /*color: #fff;*/
+    color: #00D6AA;
 }
 
 .page-number-button {
     font-size: 1.5rem;
     border-radius: 1.2rem;
     padding: 1rem;
-    background: #EED6D3;
+    /*background: #EED6D3;*/
+    background: #00D6AA;
     border: .1rem solid #fff;
     color: #000;
     white-space: nowrap;

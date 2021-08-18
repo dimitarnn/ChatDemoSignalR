@@ -79,7 +79,8 @@ namespace ChatDemoSignalR.Controllers
             if (user == null)
                 return BadRequest();
 
-            List<ChatRoom> rooms = (await _unitOfWork.ChatRooms.GetRoomsNotContainingUser(user)).ToList();
+            //List<ChatRoom> rooms = (await _unitOfWork.ChatRooms.GetRoomsNotContainingUser(user)).ToList();
+            List<ChatRoom> rooms = (await _unitOfWork.ChatRooms.GetAvailable(user)).ToList();
 
             return Ok(rooms);
         }
@@ -106,26 +107,19 @@ namespace ChatDemoSignalR.Controllers
             return Ok(rooms);
         }
 
-        [Authorize]
-        public async Task<IActionResult> DisplayAllPrivateChats()
+        [HttpGet]
+        public async Task<IActionResult> GetPublicRooms()
         {
-            string userId =  _userManager.GetUserId(User);
-            User user = await _unitOfWork.Users.GetUserWithFollowing(userId);
-
-            List<User> friends = new List<User>();
-            foreach (var tmp in user.Following)
-            {
-                User friend = await _unitOfWork.Users.Get(tmp.FriendId);
-                if (friend != null)
-                {
-                    friends.Add(friend);
-                }
-            }
-
-            return View(friends);
+            List<ChatRoom> rooms = (await _unitOfWork.ChatRooms.GetPublicRooms()).ToList();
+            return Ok(rooms);
         }
 
-        // for react test page
+        [Authorize]
+        public IActionResult DisplayAllPrivateChats()
+        {
+            return View();
+        }
+
         [Authorize]
         public async Task<IActionResult> GetPrivateChats()
         {
@@ -168,8 +162,17 @@ namespace ChatDemoSignalR.Controllers
             return View(model);
         }
 
+        [HttpGet]
+        public IActionResult GetChatTypes()
+        {
+            string[] array = Enum.GetNames(typeof(ChatType));
+            List<string> list = new List<string>(array);
+
+            return Ok(list);
+        }
+
         [HttpPost]
-        public async Task<IActionResult> CreateRoom(string roomName)
+        public async Task<IActionResult> CreateRoom(string roomName, string description, ChatType chatType)
         {
             /*
              *  TODO:
@@ -186,6 +189,7 @@ namespace ChatDemoSignalR.Controllers
             var chatRoom = new ChatRoom
             {
                 RoomName = roomName,
+                DisplayName = roomName,
                 ChatType = ChatType.Room
             };
 
@@ -195,26 +199,58 @@ namespace ChatDemoSignalR.Controllers
             return RedirectToAction("DisplayRooms", "Chat");
         }
 
+        //[Authorize]
         [HttpPost]
-        public async Task<IActionResult> AddChatRoom([FromBody] ChatRoom room)
+        public async Task<IActionResult> AddChatRoom(string roomName, string description, ChatType chatType)
         {
-            string roomName = room.RoomName;
+            User user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return BadRequest();
+
             if (roomName == null || roomName.Length == 0)
                 return BadRequest();
 
-            if (await _unitOfWork.ChatRooms.ContainsRoom(roomName))
+            bool isCreated = await _unitOfWork.ChatRooms.ContainsRoom(roomName);
+            if (isCreated)
                 return BadRequest();
+
+            if (description == null)
+                description = "No description";
+
+            if (description.Length == 0)
+                description = "No description";
 
             ChatRoom chatRoom = new ChatRoom
             {
                 RoomName = roomName,
-                ChatType = ChatType.Room
+                ChatType = chatType,
+                DisplayName = roomName,
+                Description = description,
+                CreatorId = user.Id,
+                CreatorName = user.UserName
             };
+
+            chatRoom.Users.Add(user); // add the creator user
 
             _unitOfWork.ChatRooms.Add(chatRoom);
             await _unitOfWork.Complete();
 
-            return Ok(chatRoom);
+            //ChatRoom response = await _unitOfWork.ChatRooms.GetByName(roomName);  // get the room without the other connected models
+            // to avaoid loops and error 500 
+            // roomVM ?
+
+            ChatRoom response = new ChatRoom
+            {
+                Id = chatRoom.Id,
+                RoomName = roomName,
+                ChatType = chatType,
+                DisplayName = roomName,
+                Description = description,
+                CreatorId = user.Id,
+                CreatorName = user.UserName
+            };
+
+            return Ok(response);
         }
 
         [Authorize]
@@ -230,6 +266,25 @@ namespace ChatDemoSignalR.Controllers
             var model = new PersonalPageVM { Messages = messages, Users = users };
 
             return View(model);
+        }
+
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> GetRoomsContainingUser()
+        {
+            User user = await _userManager.GetUserAsync(User);
+            List<ChatRoom> rooms = (await _unitOfWork.ChatRooms.GetRoomsContaining(user)).ToList();
+
+            return Ok(rooms);
+        }
+
+
+
+        [Authorize]
+        [HttpGet]
+        public IActionResult DisplayRoomsContainingUser()
+        {
+            return View();
         }
         
         public async Task<IActionResult> SendMessageToUser(string text, string target)
@@ -281,7 +336,11 @@ namespace ChatDemoSignalR.Controllers
             if (chatRoom == null)
                 return BadRequest();
 
-            if (chatRoom.Messages == null)
+            if (chatRoom.ChatType == ChatType.Ephemeral)
+                return Ok(new MessageNotificationVM { Message = message, Notification = null });
+
+
+            if (chatRoom.Messages == null)  // ?
             {
                 chatRoom.Messages = new List<Message>();
             }
@@ -292,10 +351,11 @@ namespace ChatDemoSignalR.Controllers
             Notification notification;
             string notificationText = "-";
             string source = "";
+            DateTime creationTime = DateTime.Now;
 
             if (_signInManager.IsSignedIn(User))
             {
-                if (chatRoom.ChatType == ChatType.Room)
+                if (chatRoom.ChatType == ChatType.Room || chatRoom.ChatType == ChatType.InviteOnly)
                 {
                     notificationText = $"New message in {roomName} at " + String.Format("{0:HH:mm:ss dd/MM/yy}", DateTime.Now);
                     source = String.Format("/Chat/DisplayChatRoom?roomName={0}", roomName);
@@ -314,6 +374,7 @@ namespace ChatDemoSignalR.Controllers
                         continue;
                     notification = new Notification
                     {
+                        CreationTime = creationTime,
                         UserId = member.Id,
                         User = member,
                         Text = notificationText,
@@ -327,9 +388,10 @@ namespace ChatDemoSignalR.Controllers
 
 
             notification = null;
+            // messages in ephemeral rooms do not send notifications
 
-            if (_signInManager.IsSignedIn(User))
-                notification = new Notification { UserId = userId, Text = notificationText, Source = source };
+            if (_signInManager.IsSignedIn(User) && chatRoom.ChatType != ChatType.Ephemeral)
+                notification = new Notification { CreationTime = creationTime, UserId = userId, Text = notificationText, Source = source };
 
             MessageNotificationVM model = new MessageNotificationVM
             {
@@ -339,11 +401,23 @@ namespace ChatDemoSignalR.Controllers
 
             return Ok(model);
         }
-
+        
+        [HttpGet]
         public async Task<IActionResult> DisplayChatRoom(string roomName)
         {
+            User user = await _userManager.GetUserAsync(User);
+            bool contains = await _unitOfWork.ChatRooms.RoomContainsUser(roomName, user);
             ChatRoom chatRoom = await _unitOfWork.ChatRooms.GetRoomWithMessages(roomName);
+
+            if (!contains && (chatRoom.ChatType == ChatType.InviteOnly || chatRoom.ChatType == ChatType.Private))
+                return BadRequest();
+
+            //if (!(await _unitOfWork.ChatRooms.RoomContainsUser(roomName, user)))
+            //    return BadRequest();
+
             
+            // check if the user is included in the room
+
             if (chatRoom == null)
             {
                 return RedirectToAction("Index", "Home");
@@ -396,11 +470,50 @@ namespace ChatDemoSignalR.Controllers
 
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> JoinRoom(string roomName)
+        public async Task<IActionResult> JoinRoom(string roomName) // Any Room
+        {
+            var user = await _userManager.GetUserAsync(User);
+            ChatRoom chatRoom = await _unitOfWork.ChatRooms.GetRoomWithUsers(roomName);
+
+            if (chatRoom == null)
+                return BadRequest();
+
+            if (!chatRoom.Users.Contains(user))
+            {
+                chatRoom.Users.Add(user);
+                await _unitOfWork.Complete();
+            }
+
+            return Ok();
+        }
+
+        [HttpGet]
+        [Authorize]
+        public IActionResult DisplayRoomsCreatedBy()
+        {
+            return View();
+        }
+
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> GetRoomsCreatedBy()
+        {
+            string userId = _userManager.GetUserId(User);
+            List<ChatRoom> rooms = (await _unitOfWork.ChatRooms.GetChatRoomsCreatedBy(userId)).ToList();
+
+            return Ok(rooms);
+        }
+
+        [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> JoinChatRoom(string roomName)  // Room or Ephemeral
         {
             var user = await _userManager.GetUserAsync(User);
 
             ChatRoom chatRoom = await _unitOfWork.ChatRooms.GetRoomWithUsers(roomName);
+
+            if (chatRoom.ChatType == ChatType.InviteOnly || chatRoom.ChatType == ChatType.Private)
+                return BadRequest();
 
             if (chatRoom.ChatType == ChatType.Private)
                 return BadRequest();
@@ -419,7 +532,7 @@ namespace ChatDemoSignalR.Controllers
             return Ok();
         }
 
-        public async Task<IActionResult> CreatePrivateRoom(string user1Id, string user2Id)
+        public async Task<IActionResult> CreatePrivateRoom(string user1Id, string user2Id) // user2 is the request sender
         {
             User user1 = await _unitOfWork.Users.Get(user1Id);
             User user2 = await _unitOfWork.Users.Get(user2Id);
@@ -435,7 +548,8 @@ namespace ChatDemoSignalR.Controllers
             room = new ChatRoom
             {
                 ChatType = ChatType.Private,
-                RoomName = roomName
+                RoomName = roomName,
+                DisplayName = user1.UserName + " - " + user2.UserName
             };
 
             room.Users.Add(user1);

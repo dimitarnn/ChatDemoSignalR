@@ -1,5 +1,6 @@
 ﻿using ChatDemoSignalR.Data;
 using ChatDemoSignalR.Models;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -46,6 +47,40 @@ namespace ChatDemoSignalR.Repository
         public async Task<IEnumerable<User>> GetUsersInRoom(ChatRoom room)
         {
             return await AppDbContext.Users.Where(x => x.ChatRooms.Contains(room)).ToListAsync();
+        }
+
+        public async Task<IEnumerable<User>> GetUsersNotInRoom(ChatRoom room)
+        {
+            return await AppDbContext.Users.Where(x => !x.ChatRooms.Contains(room)).ToListAsync();
+        }
+
+        public async Task<IEnumerable<User>> GetUsersNotInRoomOrInvited(ChatRoom room)
+        {
+            List<User> users = await AppDbContext.Users.Include(x => x.ChatRooms).Include(x => x.JoinRoomRequests).ToListAsync();
+            List<User> list = new List<User>();
+
+            foreach (User user in users)
+            {
+                if (user.ChatRooms.Contains(room))
+                    continue;
+
+                bool skip = false;
+                foreach (JoinRoomRequest request in user.JoinRoomRequests)
+                {
+                    if (request.ChatRoom == room && request.Status == RequestStatus.Pending)
+                    {
+                        skip = true;
+                        break;
+                    }
+                }
+
+                if (skip)
+                    continue;
+
+                list.Add(user);
+            }
+
+            return list;
         }
 
         public async Task<IEnumerable<User>> GetUsersWithFollowedAndFollowing(string id)

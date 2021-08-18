@@ -1,6 +1,8 @@
 ﻿import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 import axios from 'axios';
+import Pagination from './Pagination';
+import PaginationInput from './PaginationInput';
 
 var app = document.getElementById('root');
 
@@ -12,7 +14,7 @@ function Test() {
     const [tmpPage, setTmpPage] = useState(1);
 
     useEffect(() => {
-        const url = '/Chat/GetChatRooms';
+        const url = '/Chat/GetPublicRooms';
         setLoading(true);
         axios.get(url)
             .then(response => response.data)
@@ -66,6 +68,8 @@ function Test() {
 
     return (
         <div>
+            <div id='previous-page-mobile' onClick={previousPage}><span>&#8249;</span></div>
+            <div id='next-page-mobile' onClick={nextPage}><span>&#8250;</span></div>
             <div>Hello</div>
             <Rooms loading={loading} rooms={currentRooms} />
             <Pagination
@@ -77,22 +81,23 @@ function Test() {
                 previousPage={previousPage}
                 currentPage={currentPage}
             />
-                <div className='page-form'>
-                    <input className='page-number-input' value={tmpPage} onChange={handleChange} />
-                    <button className='page-number-button' onClick={handleClick}>Go to</button>
-                </div>
+            <PaginationInput tmpPage={tmpPage} handleChange={handleChange} handleClick={handleClick} />
         </div>
     );
 }
 
-function ChatRoom({ roomName }) {
-    const url = `/Chat/DisplayChatRoom?roomName=${roomName}`;
+function ChatRoom({ room }) {
+    const url = `/Chat/DisplayChatRoom?roomName=${room.roomName}`;
 
     return (
-        <div className="chatroom">
-            <div className="chatroom-header">{roomName}</div>
-            <div className="chatroom-body">
-                <a href={url} className="enter-room-button">Enter</a>
+        <div className='black-card'>
+            <div className='card-box'>
+                <div className='card-content'>
+                    <h2>Room</h2>
+                    <h3>{room.roomName}</h3>
+                    <p>{room.description}</p>
+                    <a href={url}>Enter</a>
+                </div>
             </div>
         </div>
     )
@@ -108,74 +113,11 @@ function Rooms({ rooms, loading }) {
             <div id="chat-rooms-container">
                 {
                     rooms.map(room => {
-                        return <ChatRoom key={room.roomName} roomName={room.roomName} />
+                        return <ChatRoom key={room.roomName} room={room} />
                     })
                 }
             </div>
         </div>
-    );
-}
-
-function Pagination({ loading, currentPage, totalRooms, roomsPerPage, paginate, nextPage, previousPage }) {
-    if (loading)
-        return (<div>Loading...</div>);
-
-    useEffect(() => {
-        console.log('----------------------pagination mounted');
-    }, []);
-
-    const [displayCnt, setDisplayCnt] = useState(5);
-    const [pageNumbers, setPageNumbers] = useState([]);
-    const [displayNumbers, setDisplayNumbers] = useState([]);
-
-    useEffect(() => {
-        console.log('mounted');
-        let arr = [];
-        console.log('totalRooms: ' + totalRooms);
-        console.log('roomsPerPage: ' + roomsPerPage);
-        for (let i = 1; i <= Math.ceil(totalRooms / roomsPerPage); ++i) {
-            arr.push(i);
-        }
-
-        setPageNumbers(arr);
-        console.log(arr);
-
-        console.log('currentPage: ' + currentPage);
-        // currentPage is 1-based
-        const totalPages = Math.ceil(totalRooms / roomsPerPage);
-        console.log('totalPages: ' + totalPages);
-        const pageIdx = Math.ceil(currentPage / displayCnt); // 1-based
-        const pageFirst = (pageIdx - 1) * displayCnt; // 0-based
-        const pageLast = pageFirst + displayCnt - 1; // 0-based
-        const startIdx = Math.min(Math.max(0, currentPage - 1 - 2), Math.max(0, totalPages - displayCnt));
-        const endIdx = startIdx + displayCnt;
-
-        console.log('pageFirst: ' + pageFirst);
-        console.log('pageLast: ' + pageLast);
-        console.log('startIdx: ' + startIdx);
-
-        setDisplayNumbers(arr.slice(startIdx, endIdx));
-        console.log(arr.slice(startIdx, endIdx));
-    }, [currentPage]);
-
-    return (
-        <ul className='pagination'>
-            <li key={'previous'} className='pagination-item'>
-                <a onClick={previousPage}>Previous Page</a>
-            </li>
-            {
-                displayNumbers.map(number => {
-                    return (
-                        <li key={number} className={'pagination-item' + (number == currentPage ? ' current' : '')}>
-                            <a onClick={() => paginate(number)}>{number}</a>
-                        </li>
-                    );
-                })
-            }
-            <li key={'next'} className='pagination-item'>
-                <a onClick={nextPage}>Next Page</a>
-            </li>
-        </ul>
     );
 }
 

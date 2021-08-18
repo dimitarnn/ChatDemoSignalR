@@ -3,10 +3,12 @@
 }
 @model ChatRoom
 
-@*<div class="content">*@
+    @*@if (Model.ChatType == ChatType.Ephemeral)
+    {
+        <h2>Messages in Ephemeral rooms like this one aren't saved</h2>
+    }*@
     <div id="root"></div>
     <div id="roomName" hidden>Test Room</div>
-@*</div>*@
 
 @section Scripts {
     <script>

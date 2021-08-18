@@ -10,7 +10,11 @@ module.exports = {
         displayRooms: './wwwroot/js/displayRooms.js',
         listPendingFriendRequests: './wwwroot/js/listPendingFriendRequests.js',
         listAvailable: './wwwroot/js/listAvailable.js',
-        displayAvailableRooms: './wwwroot/js/displayAvailableRooms.js'
+        displayAvailableRooms: './wwwroot/js/displayAvailableRooms.js',
+        joinRoomRequests: './wwwroot/js/joinRoomRequests.js',
+        displayRoomsCreatedByUser: './wwwroot/js/displayRoomsCreatedByUser.js',
+        inviteUsers: './wwwroot/js/inviteUsers.js',
+        displayRoomsContainingUser: './wwwroot/js/displayRoomsContainingUser.js'
     },
     output: {
         path: path.resolve(__dirname, './wwwroot/js/dist'),

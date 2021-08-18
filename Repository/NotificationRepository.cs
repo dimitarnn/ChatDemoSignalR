@@ -25,12 +25,24 @@ namespace ChatDemoSignalR.Repository
             return await AppDbContext.Notifications.CountAsync();
         }
 
+        public async Task<int> GetUserNotificationsCount(string userId)
+        {
+            return await AppDbContext.Notifications.Where(x => x.UserId == userId).CountAsync();
+        }
+
         public async Task<IEnumerable<Notification>> GetNext(string userId, int skip, int size)
         {
             List<Notification> allNotifications = await AppDbContext.Notifications.Where(x => x.UserId == userId).ToListAsync();
             int count = allNotifications.Count;
 
-            List<Notification> notifications = allNotifications.Skip(count - skip - size).Take(size).ToList();
+            //
+            int offset = count > skip + size ? count - skip - size : 0;
+            int take = Math.Min(size, count - skip);
+
+            if (skip >= count)
+                return new List<Notification>();
+
+            List<Notification> notifications = allNotifications.Skip(offset).Take(take).ToList();
             notifications.Reverse();
 
             return notifications;

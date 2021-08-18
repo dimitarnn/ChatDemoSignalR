@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ChatDemoSignalR.Models;
 using ChatDemoSignalR.Repository;
+using ChatDemoSignalR.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -19,6 +20,41 @@ namespace ChatDemoSignalR.Controllers
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> InviteUsers(string roomName)
+        {
+            ChatRoom chatRoom = await _unitOfWork.ChatRooms.GetByName(roomName);
+            if (chatRoom == null)
+                return BadRequest();
+
+            return View(chatRoom);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetUsersNotInRoomOrInvited(string roomName)
+        {
+            ChatRoom chatRoom = await _unitOfWork.ChatRooms.GetByName(roomName);
+            if (chatRoom == null)
+                return BadRequest();
+
+            List<User> users = (await _unitOfWork.Users.GetUsersNotInRoomOrInvited(chatRoom)).ToList();
+            List<UserVM> list = new List<UserVM>();
+
+            foreach (User user in users)
+            {
+                UserVM model = new UserVM
+                {
+                    Id = user.Id,
+                    UserName = user.UserName
+                };
+
+                list.Add(model);
+            }
+
+            return Ok(list);
         }
         
         [Authorize]

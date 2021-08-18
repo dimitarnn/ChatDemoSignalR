@@ -1,0 +1,15 @@
+﻿@model ChatRoom
+
+<h1>Invite users to @Model.RoomName</h1>
+
+<div class="main-container">
+    <div id="root"></div>
+</div>
+
+@section Scripts
+{
+    <script>
+        const _roomName = @Html.Raw(Json.Serialize(Model.RoomName));
+    </script>
+    <script src="~/js/dist/inviteUsers.bundle.js"></script>
+}

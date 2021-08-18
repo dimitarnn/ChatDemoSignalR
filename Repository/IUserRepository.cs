@@ -16,6 +16,10 @@ namespace ChatDemoSignalR.Repository
 
         Task<IEnumerable<User>> GetUsersInRoom(ChatRoom room);
 
+        Task<IEnumerable<User>> GetUsersNotInRoom(ChatRoom room);
+
+        Task<IEnumerable<User>> GetUsersNotInRoomOrInvited(ChatRoom room);
+
         Task<IEnumerable<User>> GetUsersExcept(string id);
 
         Task<IEnumerable<User>> GetUsersExcept(IEnumerable<User> list);

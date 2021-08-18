@@ -33,11 +33,12 @@ namespace ChatDemoSignalR.Hubs
             foreach (User user in users)
             {
                 var connections = _connections.GetConnections(user.UserName).ToList();
-                if (!connections.Any() || user.Id == notification.UserId)
+                if (!connections.Any() || user.Id == notification.UserId) // original notification has its sender as User and UserId
                     continue;
 
                 Notification tmp = new Notification
                 {
+                    Id = notification.Id,
                     UserId = user.Id,
                     User = user,
                     Text = notification.Text,
@@ -45,14 +46,30 @@ namespace ChatDemoSignalR.Hubs
                     CreationTime = notification.CreationTime
                 };
 
-                await Clients.Clients(connections).SendAsync("ReceiveNotification", tmp); /// a call to update notifications
+                await Clients.Clients(connections).SendAsync("ReceiveNotification", tmp);
             }
         }
 
-        public async Task SendNotificationToUser(string username)
+        public async Task SendNotificationToUser(string username)       // not used?, add notification as parameter 
         {
             var connections = _connections.GetConnections(username).ToList();
+            if (!connections.Any())
+                return;
+
             await Clients.Clients(connections).SendAsync("ReceiveNotification");
+        }
+
+        public async Task SendNotificationToUserId(string id, Notification notification)
+        {
+            User user = await _unitOfWork.Users.Get(id);
+            if (user == null)
+                return;
+
+            var connections = _connections.GetConnections(user.UserName).ToList();
+            if (!connections.Any())
+                return;
+
+            await Clients.Clients(connections).SendAsync("ReceiveNotification", notification);
         }
 
         public async Task SendMessageToAuthorized(Message message)
