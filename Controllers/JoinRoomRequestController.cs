@@ -52,6 +52,7 @@ namespace ChatDemoSignalR.Controllers
             return Ok(list);
         }
 
+        [HttpPost]
         public async Task<IActionResult> SendRequest(string userId, string roomName, string text = "")
         {
             User sender = await _userManager.GetUserAsync(User);
@@ -63,6 +64,9 @@ namespace ChatDemoSignalR.Controllers
                 return BadRequest();
 
             if ((await _unitOfWork.JoinRoomRequests.HasSent(sender.Id, userId, roomName))) // already sent
+                return BadRequest();
+
+            if ((await _unitOfWork.ChatRooms.RoomContainsUser(roomName, user)))
                 return BadRequest();
 
             if (text.Length == 0)

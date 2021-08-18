@@ -14,7 +14,7 @@ function User({ user, connection }) {
 
     const handleClick = () => {
         const url = `/JoinRoomRequest/SendRequest?userId=${user.id}&roomName=${roomName}`;
-        axios.get(url)
+        axios.post(url)
             .then(response => response.data)
             .then(notification => {
                 console.log('invite request sent');
