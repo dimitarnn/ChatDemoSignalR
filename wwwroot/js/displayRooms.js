@@ -5,29 +5,69 @@ import axios from 'axios';
 //import ChatRoom from './ChatRoom';
 import Pagination from './Pagination';
 import PaginationInput from './PaginationInput';
+import Alert from './Alert';
 
 var target = document.getElementById('root');
+const defaultErrorMessage = 'An error occurred';
 
 function Input({ addRoom }) {
+    const [loading, setLoading] = useState(false);
     const [roomName, setRoomName] = useState('');
     const [description, setDescription] = useState('');
     const [chatType, setChatType] = useState('Ephemeral');
     const [chatTypes, setChatTypes] = useState([]);
+    const [errors, setErrors] = useState({});
+    const [success, setSuccess] = useState(false);
+    const [serverError, setServerError] = useState(false);
+    const [serverErrorMessages, setServerErrorMessages] = useState([]);
 
     useEffect(() => {
         const url = '/Chat/GetChatTypes';
+        setLoading(true);
         axios.get(url)
             .then(response => response.data)
             .then(list => {
                 setChatTypes(list);
                 console.log(list);
             })
-            .catch(error => console.error(error.toString()));
+            .catch(error => {
+                setServerError(true);
+                let errorMessage = defaultErrorMessage;
+                if (error.response && error.response.data.length !== 0) {
+                    errorMessage = error.response.data;
+                }
+                setServerErrorMessages(prev => [...prev, errorMessage]);
+                console.error(error.toString())
+            })
+            .finally(() => setLoading(false));
     }, []);
+
+    const validate = () => {
+        const errors = {};
+
+        if (roomName.length === 0) {
+            errors.roomName = 'Please enter a room name!';
+        } else if (roomName.length <= 1) {
+            errors.roomName = 'Room name must be at least 2 characters long!';
+        }
+
+        // description may be blank
+        return errors;
+    }
 
     const handleClick = e => {
         e.preventDefault();
+
+        const errorsObj = validate();
+        setErrors(errorsObj);
+
+        if (Object.keys(errorsObj).length !== 0) {
+            setSuccess(false);
+            return;
+        }
+
         const url = `/Chat/AddChatRoom`;
+        setSuccess(true);
 
         const data = { roomName: roomName, description: description, chatType: chatType };
         //console.log(data);
@@ -44,8 +84,33 @@ function Input({ addRoom }) {
                 console.log('** room created');
             })
             .catch(error => {
-                console.log(error);
+                setServerError(true);
+                let errorMessage = defaultErrorMessage;
+                if (error.response && error.response.data.length !== 0) {
+                    errorMessage = error.response.data;
+                }
+                setServerErrorMessages(prev => [...prev, errorMessage]);
+                console.error(error);
             })
+    }
+
+    const handleChange = e => {
+        setRoomName(e.target.value);
+
+        let allErrors = errors;
+        delete allErrors[roomName];
+        setErrors(allErrors);
+    }
+
+    if (serverError) {
+        return (
+            <div className='center-div'>
+                {
+                    serverErrorMessages.map((error, step) => <Alert key={step} type='error' message={error} />)
+                }
+                <Alert type='error' message='Please reload the page and try again!' />
+            </div>
+        );
     }
 
     return (
@@ -53,14 +118,18 @@ function Input({ addRoom }) {
             <div id="create-room-form">
                 <h2>Create a new room!</h2>
                 <div>
+                    {
+                        (success && !serverError) && (<Alert type='success' message='Successfully submited!'/>)
+                    }
                     <input
                         name="roomName"
                         type="text"
                         placeholder="Your room"
                         value={roomName}
-                        onChange={e => { setRoomName(e.target.value) }}
+                        onChange={handleChange}
                         autoComplete="off"
                     />
+                    { errors?.roomName && <Alert type='error' message={errors.roomName} /> }
                     <input
                         name="description"
                         type="text"
@@ -83,14 +152,14 @@ function Input({ addRoom }) {
     )
 }
 
-function ChatRoom({ room }) {
+function ChatRoom({ room, chatTypes }) {
     const url = `/Chat/DisplayChatRoom?roomName=${room.roomName}`;
 
     return (
         <div className='black-card'>
             <div className='card-box'>
                 <div className='card-content'>
-                    <h2>Room</h2>
+                    <h2>{chatTypes[room.chatType]}</h2>
                     <h3>{room.roomName}</h3>
                     <p>{room.description}</p>
                     <a href={url}>Enter</a>
@@ -108,10 +177,14 @@ function ChatRoomsContainer() {
     const [tmpPage, setTmpPage] = useState(1);
     const [pagesCnt, setPagesCnt] = useState(0);
     const [currentRooms, setCurrentRooms] = useState([]);
+    const [chatTypes, setChatTypes] = useState([]);
+    const [serverError, setServerError] = useState(false);
+    const [serverErrorMessages, setServerErrorMessages] = useState([]);
 
 
     useEffect(() => {
         const url = '/Chat/GetPublicRooms';
+        const getChatTypesUrl = '/Chat/GetChatTypes';
         console.log('Fetching Rooms from database');
         setLoading(true);
 
@@ -123,9 +196,31 @@ function ChatRoomsContainer() {
                 setRooms(data);
             })
             .catch(error => {
+                setServerError(true);
+                let errorMessage = defaultErrorMessage;
+                if (error.response && error.response.data.length !== 0) {
+                    errorMessage = error.response.data;
+                }
+                setServerErrorMessages(prev => [...prev, errorMessage]);
                 console.log(error);
             })
             .finally(() => setLoading(false));
+
+        setLoading(true);
+        axios.get(getChatTypesUrl)
+            .then(response => response.data)
+            .then(list => setChatTypes(list))
+            .catch(error => {
+                setServerError(true);
+                let errorMessage = defaultErrorMessage;
+                if (error.response && error.response.data.length !== 0) {
+                    errorMessage = error.response.data;
+                }
+                setServerErrorMessages(prev => [...prev, errorMessage]);
+                console.error(error.toString());
+            })
+            .finally(() => setLoading(false));
+
     }, []);
 
     useEffect(() => {
@@ -192,11 +287,21 @@ function ChatRoomsContainer() {
             <div id='previous-page-mobile' onClick={previousPage}><span>&#8249;</span></div>
             <div id='next-page-mobile' onClick={nextPage}><span>&#8250;</span></div>
             <Input addRoom={addRoom} />
+            {
+                serverError ?
+                    <div>
+                        {
+                            serverErrorMessages.map((error, step) => <Alert key={step} type='error' message={error} />)
+                        }
+                        <Alert type='error' message='Please reload the page and try again!' />
+                    </div> :
+                    null
+            }
             <div id="chat-rooms-container">
                 {
                     loading ? <span>Loading...</span> :
                         currentRooms.map(room => {
-                            return <ChatRoom key={room.roomName} room={room} />
+                            return <ChatRoom key={room.roomName} room={room} chatTypes={chatTypes} />
                         })
                 }
             </div>

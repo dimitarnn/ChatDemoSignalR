@@ -28,6 +28,10 @@ namespace ChatDemoSignalR.Controllers
         public async Task<IActionResult> GetJoinRoomRequests()
         {
             string userId = _userManager.GetUserId(User);
+
+            if (userId == null)
+                return BadRequest("User must be logged in!");
+
             List<JoinRoomRequest> requests = (await _unitOfWork.JoinRoomRequests.GetPending(userId)).ToList();
             List<JoinRoomRequestVM> list = new List<JoinRoomRequestVM>();
 
@@ -60,14 +64,17 @@ namespace ChatDemoSignalR.Controllers
             ChatRoom chatRoom = await _unitOfWork.ChatRooms.GetByName(roomName);
             DateTime creationTime = DateTime.Now;
 
-            if (user == null || chatRoom == null)
-                return BadRequest();
+            if (user == null)
+                return BadRequest("Invalid user!");
+
+            if (chatRoom == null)
+                return BadRequest("Invalid room name!");
 
             if ((await _unitOfWork.JoinRoomRequests.HasSent(sender.Id, userId, roomName))) // already sent
-                return BadRequest();
+                return BadRequest("User is already invited!");
 
             if ((await _unitOfWork.ChatRooms.RoomContainsUser(roomName, user)))
-                return BadRequest();
+                return BadRequest("User has already joined!");
 
             if (text.Length == 0)
                 text = $"I invite you to join room <{roomName}>";
@@ -112,14 +119,25 @@ namespace ChatDemoSignalR.Controllers
 
         public async Task<IActionResult> Accept(string id)
         {
-            JoinRoomRequest request = await _unitOfWork.JoinRoomRequests.Get(id); // id is string, must override
+            JoinRoomRequest request = await _unitOfWork.JoinRoomRequests.Get(id);
+            if (request == null)
+                return BadRequest("Invalid request!");
+
             User receiver = await _unitOfWork.Users.Get(request.SenderId);    // notification receiver
+            if (receiver == null)
+                return BadRequest("Invalid request receiver!");
+
             User user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return BadRequest("User must be signed in!");
+
             ChatRoom room = await _unitOfWork.ChatRooms.Get(request.ChatRoomId);
+            if (room == null)
+                return BadRequest("Invalid chat room!");
             DateTime creationTime = DateTime.Now;
 
             if (request == null)
-                return BadRequest();
+                return BadRequest("Invalid request!");
 
             await _unitOfWork.JoinRoomRequests.Accept(id);
 
@@ -152,7 +170,7 @@ namespace ChatDemoSignalR.Controllers
             JoinRoomRequest request = await _unitOfWork.JoinRoomRequests.Get(id);
 
             if (request == null)
-                return BadRequest();
+                return BadRequest("Invalid request!");
 
             await _unitOfWork.JoinRoomRequests.Decline(id);
             await _unitOfWork.Complete();

@@ -28,6 +28,8 @@ namespace ChatDemoSignalR.Repository
 
         Task<IEnumerable<User>> GetUsersWithFollowedAndFollowing(string id);
 
+        Task<int> UserFriendsCount(string userId);
+
         Task<bool> IsFriendsWith(string userId, string friendId);
 
     }

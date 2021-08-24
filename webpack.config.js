@@ -14,7 +14,9 @@ module.exports = {
         joinRoomRequests: './wwwroot/js/joinRoomRequests.js',
         displayRoomsCreatedByUser: './wwwroot/js/displayRoomsCreatedByUser.js',
         inviteUsers: './wwwroot/js/inviteUsers.js',
-        displayRoomsContainingUser: './wwwroot/js/displayRoomsContainingUser.js'
+        displayRoomsContainingUser: './wwwroot/js/displayRoomsContainingUser.js',
+        register: './wwwroot/js/register.js',
+        login: './wwwroot/js/login.js',
     },
     output: {
         path: path.resolve(__dirname, './wwwroot/js/dist'),

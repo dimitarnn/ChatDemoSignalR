@@ -28,7 +28,7 @@ namespace ChatDemoSignalR.Controllers
         {
             ChatRoom chatRoom = await _unitOfWork.ChatRooms.GetByName(roomName);
             if (chatRoom == null)
-                return BadRequest();
+                return BadRequest("Invalid room name!");
 
             return View(chatRoom);
         }
@@ -38,7 +38,7 @@ namespace ChatDemoSignalR.Controllers
         {
             ChatRoom chatRoom = await _unitOfWork.ChatRooms.GetByName(roomName);
             if (chatRoom == null)
-                return BadRequest();
+                return BadRequest("Invalid room name!");
 
             List<User> users = (await _unitOfWork.Users.GetUsersNotInRoomOrInvited(chatRoom)).ToList();
             List<UserVM> list = new List<UserVM>();
@@ -62,14 +62,26 @@ namespace ChatDemoSignalR.Controllers
         public async Task<IActionResult> AddFriend(string friendId)
         {
             string userId = _userManager.GetUserId(User);
+            if (userId == null)
+                return BadRequest("User must be logged in!");
+
             User user = await _unitOfWork.Users.GetUserWithFollowedAndFollowing(userId);
             User friend = await _unitOfWork.Users.GetUserWithFollowedAndFollowing(friendId);
 
             if (friend == null)
-                return BadRequest();
+                return BadRequest("Invalid user selected!");
 
             if (friendId == userId)
-                return BadRequest();
+                return BadRequest("Must select a different user!");
+
+            int userFriendsCount = await _unitOfWork.Users.UserFriendsCount(user.Id);
+            int friendFriendsCount = await _unitOfWork.Users.UserFriendsCount(friend.Id);
+
+            if (userFriendsCount >= user.FriendsLimit)
+                return BadRequest("User cannot add more friends!");
+
+            if (friendFriendsCount >= friend.FriendsLimit)
+                return BadRequest("User cannot accept more requests!");
 
             UserFriends friends1 = new UserFriends
             {

@@ -110,6 +110,16 @@ namespace ChatDemoSignalR.Repository
             return common.Count > 0;
         }
 
+        public async Task<int> UserFriendsCount(string userId)
+        {
+            User user = await AppDbContext.Users.Include(x => x.Following).SingleOrDefaultAsync(x => x.Id == userId);
+
+            if (user == null)
+                return 0;
+
+            return user.Following.Count;
+        }
+
         public AppDbContext AppDbContext
         {
             get { return Context as AppDbContext; }

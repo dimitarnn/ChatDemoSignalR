@@ -5,6 +5,7 @@ import * as signalR from '@microsoft/signalr';
 import Message from './Message';
 import axios from 'axios';
 import moment from 'moment';
+import Alert from './Alert';
 
 var app = document.getElementById('root');
 
@@ -51,16 +52,19 @@ function Info({ roomName, user }) {
                 <h4 id="username">Logged as: {user}</h4>
             </div>
             <div id="user" hidden>{user}</div>
-            <div id="cypherInput">
-                <form>
-                    <div className="input-group input-group-sm">
-                        <div className="input-group-prepend">
-                            <span className="input-group-text">Choose a key</span>
-                        </div>
-                        <input onChange={handleInputChange} id="cypher" type="number" step="1" value={cypher} />
-                    </div>
-                </form>
-            </div>
+            {
+                // for encryption
+                //<div id="cypherInput">
+                //    <form>
+                //        <div className="input-group input-group-sm">
+                //            <div className="input-group-prepend">
+                //                <span className="input-group-text">Choose a key</span>
+                //            </div>
+                //            <input onChange={handleInputChange} id="cypher" type="number" step="1" value={cypher} />
+                //        </div>
+                //    </form>
+                //</div>
+            }
         </div>
     );
 }
@@ -92,12 +96,16 @@ function Input({ handleSubmit }) {
         <form>
             <div className="chat-input">
                 <ScrollDownButton />
-                <div className="input-group input-group-sm">
-                    <div className="input-group-prepend">
-                        <span className="input-group-text">Choose a key</span>
-                    </div>
-                    <input onChange={handleKeyChange} id="key" type="number" step="1" value={key} />
-                </div>
+                {
+                    // for encryption
+                    //    <div className="input-group input-group-sm">
+                    //        <div className="input-group-prepend">
+                    //            <span className="input-group-text">Choose a key</span>
+                    //        </div>
+                    //        <input onChange={handleKeyChange} id="key" type="number" step="1" value={key} />
+                    //    </div>
+                    //
+                }
                 <div className="input-group">
                     <textarea
                         id="message"
@@ -173,26 +181,55 @@ const reducer = (state, action) => {
 }
 
 function Messages({ displayCnt, updateMessages, messages }) {
+    const defaultErrorMessage = 'An error occurred!';
     const [state, dispatch] = useReducer(reducer, initialState);
+    const [loading, setLoading] = useState(false);
+    const [serverError, setServerError] = useState(false);
+    const [serverErrorMessages, setServerErrorMessages] = useState([]);
 
     useEffect(() => {
-
-        axios.get('/Chat/GetMessageCount/', { params: { roomName: _roomName } })
+        setLoading(true);
+        setServerError(false);
+        axios.get('/Chat/GetMessageCount/', {
+            params: {
+                roomName: _roomName
+            }
+        })
             .then(response => response.data)
             .then(count => {
                 dispatch({ type: 'UPDATE_TOTAL', payload: { total: count } });
             })
-            .catch(error => console.error(error.toString()));
+            .catch(error => {
+                setServerError(true);
+                let errorMessage = defaultErrorMessage;
+                if (error.response && error.response.data.length !== 0) {
+                    errorMessage = error.response.data;
+                }
+                setServerErrorMessages(prev => [...prev, errorMessage]);
+                console.error(error.toString());
+
+            })
+            .finally(() => setLoading(false));
 
         // '/Chat/GetMessages', { params: { roomName: _roomName, index: 0, size: displayCnt } }
         // roomName has a space ' ' instead of '%20'
+        setLoading(true);
         axios.get(`/Chat/GetMessages?roomName=${_roomName}&skip=0&size=${displayCnt}`)
             .then(response => response.data)
             .then(list => {
                 dispatch({ type: 'SET_COUNT', payload: { currentCount: list.length } });
                 updateMessages(list, true);
             })
-            .catch(error => console.error(error.toString()));
+            .catch(error => {
+                setServerError(true);
+                let errorMessage = defaultErrorMessage;
+                if (error.response && error.response.data.length !== 0) {
+                    errorMessage = error.response.data;
+                }
+                setServerErrorMessages(prev => [...prev, errorMessage]);
+                console.error(error.toString());
+            })
+            .finally(() => setLoading(false));
 
     }, []);
 
@@ -235,14 +272,43 @@ function Messages({ displayCnt, updateMessages, messages }) {
                     dispatch({ type: 'UPDATE_COUNT', payload: { increase: displayCnt } });
                     updateMessages(list, false);
                 })
-                .catch(error => console.error(error.toString()));
+                .catch(error => {
+                    let errorMessage = defaultErrorMessage;
+                    setServerError(true);
+                    if (error.response && error.response.data.length !== 0) {
+                        errorMessage = error.response.data;
+                    }
+                    setServerErrorMessages(prev => [...prev, errormessage])
+                    console.error(error.toString())
+                });
         }
     }
 
     const isFullDate = false; // based on screen/window width
 
+
+    //if (serverError) {
+    //    return (
+    //        <div>
+    //            {
+    //                serverErrorMessages.map((error, step) => <Alert key={step} type='error' message={error} />)
+    //            }
+    //            <Alert type='error' message='Please reload the page and try again!' />
+    //        </div>
+    //    );
+    //}
     return (
         <div id="messages" onScroll={loadOnScroll}>
+            {
+                serverError ?
+                    <div>
+                        {
+                            serverErrorMessages.map((error, step) => <Alert key={step} type='error' message={error} />)
+                        }
+                        <Alert type='error' message='Please reload the page and try again!' />
+                    </div> :
+                    null
+            }
             {
                 state.currentCount !== state.total ?
                     <div id="content-start">
@@ -337,7 +403,11 @@ const encryptText = (text, offset) => {     // simple encryption function for te
 }
 
 function Page({ displayName }) {
+    const defaultErrorMessage = 'An error occurred!';
     const [state, dispatch] = useReducer(pageReducer, initialPageState);
+    const [loading, setLoading] = useState(false);
+    const [serverError, setServerError] = useState(false);
+    const [serverErrorMessages, setServerErrorMessages] = useState([]);
 
     const scrollAfterUpdate = () => {
         //console.log('~Scroll after update.');
@@ -370,6 +440,11 @@ function Page({ displayName }) {
         const data = { text, roomName: _roomName };
         const url = '/Chat/SendMessage';
 
+        if (text === undefined || text === null || text.length === 0)
+            return;
+
+        setLoading(true);
+
         axios.post(url, null, { params: { text, roomName: _roomName } })
             .then(response => response.data)
             .then(data => {
@@ -378,7 +453,16 @@ function Page({ displayName }) {
                 state.connection.invoke('SendMessageToGroup', _roomName, data.message);
                 state.connection.invoke('SendNotificationToGroup', _roomName, data.notification);
             })
-            .catch(error => console.error(error.toString()));
+            .catch(error => {
+                let errorMessage = defaultErrorMessage;
+                setServerError(true);
+                if (error.response && error.response.data.length !== 0) {
+                    errorMessage = error.response.data;
+                }
+                setServerErrorMessages(prev => [...prev, errorMessage]);
+                console.error(error.toString());
+            })
+            .finally(() => setLoading(false));
     }
 
     useEffect(() => {
@@ -400,7 +484,15 @@ function Page({ displayName }) {
                 console.log(message);
                 state.connection.invoke('SendMessageToGroup', _roomName, message);
             })
-            .catch(error => console.error(error.toString()));
+            .catch(error => {
+                let errorMessage = defaultErrorMessage;
+                setServerError(true);
+                if (error.response && error.response.data.length !== 0) {
+                    errorMessage = error.response.data;
+                }
+                setServerErrorMessages(prev => [...prev, errorMessage]);
+                console.error(error.toString());
+            });
 
         state.connection.on('ReceiveMessage', message => {
             const height = $('#messages')[0].scrollHeight;
@@ -418,6 +510,16 @@ function Page({ displayName }) {
 
     }, [state.connection]);
 
+    if (serverError) {
+        return (
+            <div className='center-div'>
+                {
+                    serverErrorMessages.map((error, step) => <Alert key={step} type='error' message={error} />)
+                }
+                <Alert type='error' message='Please reload the page and try again!' />
+            </div>
+        );
+    }
     return (
         <div id="message-container">
             <Info roomName={displayName} user={_user} />

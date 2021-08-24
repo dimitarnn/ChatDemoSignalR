@@ -54,11 +54,13 @@ namespace ChatDemoSignalR.Controllers
 
                 if (result.Succeeded)
                 {
-                    return RedirectToAction("Index", "Home");
+                    return Ok();
+                    //return RedirectToAction("Index", "Home");
                 }
             }
 
-            return RedirectToAction("Login", "Account");
+            return BadRequest();
+            //return RedirectToAction("Login", "Account");
         }
 
         [HttpGet]
@@ -68,12 +70,12 @@ namespace ChatDemoSignalR.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Register(string username, string firstName, string lastName, string password)
+        public async Task<IActionResult> Register(string username, string email, string firstName, string lastName, string password)
         {
             var user = new User
             {
                 UserName = username,
-                Email = username,
+                Email = email,
                 FirstName = firstName,
                 LastName = lastName
             };
@@ -94,7 +96,8 @@ namespace ChatDemoSignalR.Controllers
 
                 await _mailService.SendConfirmationEmail(request, link);
 
-                return RedirectToAction("EmailVerification");
+                //return RedirectToAction("EmailVerification");
+                return Ok();
                 //await _signInManager.SignInAsync(user, isPersistent: false);
                 //return RedirectToAction("Index", "Home");
             }
@@ -104,7 +107,7 @@ namespace ChatDemoSignalR.Controllers
                 ModelState.AddModelError("", error.Description);
             }
 
-            return View();
+            return BadRequest();
         }
 
         public async Task<IActionResult> VerifyEmail(string userId, string token)

@@ -1,0 +1,24 @@
+﻿.alert {
+    word-break: break-word;
+    display: block;
+    box-sizing: border-box;
+    padding: .75rem 1.25rem;
+    margin: .3rem auto;
+    text-align: center;
+    border-radius: .25rem;
+    max-width: 20rem;
+    /*min-width: 20rem;*/
+    width: 100%;
+}
+
+.alert.success {
+    color: #155724;
+    background: #d4edda;
+    border-color: #c3e6cb;
+}
+
+.alert.error {
+    color: #721c24;
+    background: #f8d7da;
+    border-color: #f5c6cb;
+}

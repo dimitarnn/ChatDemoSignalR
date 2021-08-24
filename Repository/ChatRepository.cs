@@ -23,6 +23,12 @@ namespace ChatDemoSignalR.Repository
                 .ToListAsync();
         }
 
+        public async Task<int> UserRoomsCount(string userId)
+        {
+            List<ChatRoom> rooms = await AppDbContext.ChatRooms.Where(x => x.CreatorId == userId).ToListAsync();
+            return rooms.Count;
+        }
+
         public async Task<IEnumerable<ChatRoom>> GetRoomsContaining(User user) // not including private chats
         {
             return await AppDbContext.ChatRooms

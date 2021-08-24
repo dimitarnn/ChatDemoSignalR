@@ -4,14 +4,20 @@ import axios from 'axios';
 import * as SignalR from '@microsoft/signalr';
 import Pagination from './Pagination';
 import PaginationInput from './PaginationInput';
+import Alert from './Alert';
 
 var app = document.getElementById('root');
+const defaultErrorMessage = 'An error occurred!';
 
 function User({ user, removeUser, connection }) {
     const [available, setAvailable] = useState(true);
+    const [loading, setLoading] = useState(false);
+    const [serverError, setServerError] = useState(false);
+    const [serverErrorMessages, setServerErrorMessages] = useState([]);
 
     const handleClick = () => {
         const url = `/FriendRequest/SendFriendRequest?userId=${user.id}`;
+        setLoading(true);
         axios.get(url)
             .then(response => response.data)
             .then(notification => {
@@ -24,7 +30,16 @@ function User({ user, removeUser, connection }) {
                 )
                     connection.invoke('SendNotificationToUserId', notification.userId, notification);
             })
-            .catch(error => console.error(error.toString()));
+            .catch(error => {
+                setServerError(true);
+                let errorMessage = defaultErrorMessage;
+                if (error.response && error.response.data.length !== 0) {
+                    errorMessage = error.response.data;
+                }
+                setServerErrorMessages(prev => [...prev, errorMessage]);
+                console.error(error.toString());
+            })
+            .finally(() => setLoading(false));
     }
 
     return (
@@ -34,22 +49,21 @@ function User({ user, removeUser, connection }) {
                     <h2>Add</h2>
                     <h3>{user.userName}</h3>
                     {
-                        available ? <a onClick={handleClick}>Send Friend Request</a> :
-                            <a href='#' className='joined'>Request Sent!</a>
+                        serverError ?
+                            <div>
+                                {
+                                    serverErrorMessages.map((error, step) => <Alert key={step} type='error' message={error} />)
+                                }
+                            </div> :
+                            (
+                                available ?
+                                    <a onClick={handleClick}>Send Friend Request</a> :
+                                    <a href='#' className='joined'>Request Sent!</a>
+                            )
                     }
                 </div>
             </div>
         </div>
-        //<div className="card">
-        //    <div className="card-header">
-        //        {user.userName}
-        //    </div>
-        //    <div className="card-body">
-        //        {
-        //            available ? <a className="btn-dark" onClick={handleClick}>Send Friend Request</a> : <a className="btn-success">Request Sent!</a>
-        //        }
-        //    </div>
-        //</div>
     );
 }
 
@@ -61,6 +75,8 @@ function UsersContainer() {
     const [tmpPage, setTmpPage] = useState(1);
     const [usersPerPage, setUsersPerPage] = useState(9);
     const [currentUsers, setCurrentUsers] = useState([]);
+    const [serverError, setServerError] = useState(false);
+    const [serverErrorMessages, setServerErrorMessages] = useState([]);
 
     const removeUser = user => {
         let usersArray = [...users];
@@ -127,8 +143,16 @@ function UsersContainer() {
                 console.log(list);
                 setUsers(list);
             })
-            .catch(error => console.error(error.toString()))
-            .finally(setLoading(false));
+            .catch(error => {
+                setServerError(true);
+                let errorMessage = defaultErrorMessage;
+                if (error.response && error.response.data.length !== 0) {
+                    errorMessage = error.response.data;
+                }
+                setServerErrorMessages(prev => [...prev, errorMessage]);
+                console.error(error.toString());
+            })
+            .finally(() => setLoading(false));
 
         const connection = new SignalR.HubConnectionBuilder()
             .withUrl('/messages')
@@ -143,11 +167,29 @@ function UsersContainer() {
 
         connection.start()
             .then(() => console.log('Friends list connection established.'))
-            .catch(error => console.error(error.toString()));
+            .catch(error => {
+                setServerError(true);
+                let errorMessage = defaultErrorMessage;
+                if (error.response && error.response.data.length !== 0) {
+                    errorMessage = error.response.data;
+                }
+                setServerErrorMessages(prev => [...prev, errorMessage]);
+                console.error(error.toString());
+            });
     }, [connection]);
 
     return (
         <div className="contents">
+            {
+                serverError ?
+                    <div>
+                        {
+                            serverErrorMessages.map((error, step) => <Alert key={step} type='error' message={error} />)
+                        }
+                        <Alert type='error' message='Please reload the page and try again!' />
+                    </div> :
+                    null
+            }
             <div id='previous-page-mobile' onClick={previousPage}><span>&#8249;</span></div>
             <div id='next-page-mobile' onClick={nextPage}><span>&#8250;</span></div>
             <div className="card-container">

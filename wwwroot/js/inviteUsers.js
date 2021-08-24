@@ -4,16 +4,21 @@ import axios from 'axios';
 import * as SignalR from '@microsoft/signalr';
 import Pagination from './Pagination';
 import PaginationInput from './PaginationInput';
+import Alert from './Alert';
 
 var root = document.getElementById('root');
 const roomName = _roomName;
+const defaultErrorMessage = 'An error occurred!';
 
 function User({ user, connection }) {
     const [available, setAvailable] = useState(true);
-
+    const [loading, setLoading] = useState(false);
+    const [serverError, setServerError] = useState(false);
+    const [serverErrorMessages, setServerErrorMessages] = useState([]);
 
     const handleClick = () => {
         const url = `/JoinRoomRequest/SendRequest?userId=${user.id}&roomName=${roomName}`;
+        setLoading(true);
         axios.post(url)
             .then(response => response.data)
             .then(notification => {
@@ -23,7 +28,16 @@ function User({ user, connection }) {
                 setAvailable(false);
                 connection.invoke('SendNotificationToUserId', notification.userId, notification);
             })
-            .catch(error => console.error(error.toString()));
+            .catch(error => {
+                setServerError(true);
+                let errorMessage = defaultErrorMessage;
+                if (error.response && error.response.data.length !== 0) {
+                    errorMessage = error.response.data;
+                }
+                setServerErrorMessages(prev => [...prev, errorMessage]);
+                console.error(error.toString());
+            })
+            .finally(() => setLoading(false));
     }
 
     return (
@@ -33,23 +47,24 @@ function User({ user, connection }) {
                     <h2>Invite</h2>
                     <h3 className='user'>{user.userName}</h3>
                     {
-                        available ?
-                            <a onClick={handleClick}>Invite to room</a> :
-                            <a href='#' className='joined'>Invited</a>
+                        serverError ?
+                            <div>
+                                {
+                                    serverErrorMessages.map((error, step) => <Alert key={step} type='error' message={error} />)
+                                }
+                            </div> :
+                            null
+                    }
+                    {
+                        !serverError ? (
+                            available ?
+                                <a onClick={handleClick}>Invite to room</a> :
+                                <a href='#' className='joined'>Invited</a>
+                        ) : null
                     }
                 </div>
             </div>
         </div>
-        //<div className="card">
-        //    <div className="card-header">
-        //        {user.userName}
-        //    </div>
-        //    <div className="card-body">
-        //        {
-        //            available ? <a className="btn-dark" onClick={handleClick}>Invite to room</a> : <a className="btn-success">Invited!</a>
-        //        }
-        //    </div>
-        //</div>
     );
 }
 
@@ -61,6 +76,8 @@ function UsersContainer() {
     const [tmpPage, setTmpPage] = useState(1);
     const [usersPerPage, setUsersPerPage] = useState(9);
     const [currentUsers, setCurrentUsers] = useState([]);
+    const [serverError, setServerError] = useState(false);
+    const [serverErrorMessages, setServerErrorMessages] = useState([]);
 
     useEffect(() => {
         const url = `/User/GetUsersNotInRoomOrInvited?roomName=${roomName}`;
@@ -68,7 +85,15 @@ function UsersContainer() {
         axios.get(url)
             .then(response => response.data)
             .then(list => setUsers(list))
-            .catch(error => console.error(error.toString()))
+            .catch(error => {
+                setServerError(true);
+                let errorMessage = defaultErrorMessage;
+                if (error.response && error.response.data.length !== 0) {
+                    errorMessage = error.response.data;
+                }
+                setServerErrorMessages(prev => [...prev, errorMessage]);
+                console.error(error.toString());
+            })
             .finally(() => setLoading(false));
 
         const connection = new SignalR.HubConnectionBuilder()
@@ -84,7 +109,15 @@ function UsersContainer() {
 
         connection.start()
             .then(() => console.log('Invite users connection established.'))
-            .catch(error => console.error(error.toString()));
+            .catch(error => {
+                setServerError(true);
+                let errorMessage = defaultErrorMessage;
+                if (error.response && error.response.data.length !== 0) {
+                    errorMessage = error.response.data;
+                }
+                setServerErrorMessages(prev => [...prev, errorMessage]);
+                console.error(error.toString())
+            });
     }, [connection]);
 
     useEffect(() => {
@@ -138,6 +171,16 @@ function UsersContainer() {
 
     return (
         <div>
+            {
+                serverError ?
+                    <div>
+                        {
+                            serverErrorMessages.map((error, step) => <Alert key={step} type='error' message={error} />)
+                        }
+                        <Alert type='error' message='Please reload the page and try again!' />
+                    </div> :
+                    null
+            }
             <div id='previous-page-mobile' onClick={previousPage}><span>&#8249;</span></div>
             <div id='next-page-mobile' onClick={nextPage}><span>&#8250;</span></div>
             <div className='card-container'>

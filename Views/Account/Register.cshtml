@@ -1,4 +1,6 @@
-﻿<div class="main-container">
+﻿<div id="root"></div>
+
+@*<div class="main-container">
     <div class="center-div">
         <form asp-controller="Account" asp-action="Register">
             <div class="form">
@@ -22,10 +24,11 @@
         </form>
         <button type="button" class="form-button" onclick="reset()">Reset</button>
     </div>
-</div>
+</div>*@
 
 @section Scripts {
-    <script>
+    <script src="~/js/dist/register.bundle.js"></script>
+    @*<script>
         function reset() {
             var username = document.getElementById('username');
             username.value = '';
@@ -36,5 +39,5 @@
             var password = document.getElementById('password');
             password.value = '';
         }
-    </script>
+    </script>*@
 }

@@ -50,7 +50,13 @@ namespace ChatDemoSignalR.Controllers
 
         public async Task<IActionResult> GetPending()
         {
+            Random rng = new Random();
+            int tmp = rng.Next();
+            if (tmp % 2 == 0)
+                return BadRequest("error message error message");
             User user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return BadRequest("User must be logged in!");
             List<FriendRequest> requests = (await _unitOfWork.FriendRequests.GetPending(user.Id)).ToList();
             List<FriendRequestVM> response = new List<FriendRequestVM>();
 
@@ -126,6 +132,9 @@ namespace ChatDemoSignalR.Controllers
         public async Task<IActionResult> GetAvailable()
         {
             string userId = _userManager.GetUserId(User);
+            if (userId == null)
+                return BadRequest("User must be logged in!");
+
             List<User> users = (await _unitOfWork.Users.GetAll()).ToList();
             List<User> available = new List<User>();
 
@@ -148,14 +157,20 @@ namespace ChatDemoSignalR.Controllers
         public async Task<IActionResult> SendFriendRequest(string userId)
         {
             User sender = await _userManager.GetUserAsync(User);
+            if (sender == null)
+                return BadRequest("User must be logged in!");
+
             User receiver = await _unitOfWork.Users.Get(userId);
+            if (receiver == null)
+                return BadRequest("Invalid user!");
+
             DateTime creationTime = DateTime.Now;
 
             if ((await _unitOfWork.FriendRequests.HasSent(sender.Id, receiver.Id)))
-                return Ok(null);
+                return BadRequest("A request has already benn sent!");
 
             if ((await _unitOfWork.Users.IsFriendsWith(sender.Id, receiver.Id)))
-                return Ok(null);
+                return Ok("Invalid user!");
 
             FriendRequest request = new FriendRequest
             {
@@ -198,11 +213,14 @@ namespace ChatDemoSignalR.Controllers
         public async Task<IActionResult> AcceptRequest(int id)
         {
             FriendRequest request = await _unitOfWork.FriendRequests.Get(id);
-            User user = await _userManager.GetUserAsync(User);
-            DateTime creationTime = DateTime.Now;
-
             if (request == null)
-                return BadRequest();
+                return BadRequest("Invalid request!");
+
+            User user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return BadRequest("User must be logged in!");
+
+            DateTime creationTime = DateTime.Now;
 
             await _unitOfWork.FriendRequests.Accept(id);
 
@@ -236,6 +254,10 @@ namespace ChatDemoSignalR.Controllers
         [HttpPost]
         public async Task<IActionResult> DeclineRequest(int id)
         {
+            FriendRequest request = await _unitOfWork.FriendRequests.Get(id);
+            if (request == null)
+                return BadRequest("Invalid request!");
+
             await _unitOfWork.FriendRequests.Decline(id);
             await _unitOfWork.Complete();
             return Ok();

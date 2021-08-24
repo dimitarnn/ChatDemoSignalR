@@ -4,11 +4,16 @@ import axios from 'axios';
 import * as SignalR from '@microsoft/signalr';
 import Pagination from './Pagination';
 import PaginationInput from './PaginationInput';
+import Alert from './Alert';
 
 var app = document.getElementById('root');
+const defaultErrorMessage = 'An error occurred!';
 
 function Request({ request, connection }) {
     const [state, setState] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [serverError, setServerError] = useState(false);
+    const [serverErrorMessages, setServerErrorMessages] = useState([]);
 
     useEffect(() => {
         console.log('request:');
@@ -40,13 +45,29 @@ function Request({ request, connection }) {
                     .then(() => {
                         console.log('private room created');
                     })
-                    .catch(error => console.error(error.toString()));
+                    .catch(error => {
+                        setServerError(true);
+                        let errorMessage = defaultErrorMessage;
+                        if (error.response && error.response.data.length !== 0) {
+                            errorMessage = error.response.data;
+                        }
+                        setServerErrorMessages(prev => [...prev, errorMessage]);
+                        console.error(error.toString())
+                    });
 
                 axios.post(addFriendUrl)    // adding friend
                     .then(() => {
                         console.log('friend added');
                     })
-                    .catch(error => console.error(error.toString()));
+                    .catch(error => {
+                        setServerError(true);
+                        let errorMessage = defaultErrorMessage;
+                        if (error.response && error.response.data.length !== 0) {
+                            errorMessage = error.response.data;
+                        }
+                        setServerErrorMessages(prev => [...prev, errorMessage]);
+                        console.error(error.toString())
+                    });
 
                 request.status = 1; // accepted
 
@@ -55,7 +76,15 @@ function Request({ request, connection }) {
                 console.log(connection);
                 connection.invoke('SendNotificationToUserId', notification.userId, notification);
             })
-            .catch(error => console.error(error.toString()));
+            .catch(error => {
+                setServerError(true);
+                let errorMessage = defaultErrorMessage;
+                if (error.response && error.response.data.length !== 0) {
+                    errorMessage = error.response.data;
+                }
+                setServerErrorMessages(prev => [...prev, errorMessage]);
+                console.error(error.toString())
+            });
     }
 
     const declineRequest = () => {
@@ -67,7 +96,15 @@ function Request({ request, connection }) {
                 setState('DECLINED');
                 request.status = 2; // declined
             })
-            .catch(error => console.error(error.toString()));
+            .catch(error => {
+                setServerError(true);
+                let errorMessage = defaultErrorMessage;
+                if (error.response && error.response.data.length !== 0) {
+                    errorMessage = error.response.data;
+                }
+                setServerErrorMessages(prev => [...prev, errorMessage]);
+                console.error(error.toString())
+            });
     }
 
     return (
@@ -80,16 +117,25 @@ function Request({ request, connection }) {
             <div className='card-face card-face2'>
                 <div className='card-content'>
                     {
-                        state == '' ? <a onClick={acceptRequest}>Accept</a> : null
+                        serverError ?
+                            <div>
+                                {
+                                    serverErrorMessages.map((error, step) => <Alert key={step} type='error' message={error} />)
+                                }
+                            </div> :
+                            null
                     }
                     {
-                        state == '' ? <a onClick={declineRequest}>Decline</a> : null
+                        (state == '' && !serverError) ? <a onClick={acceptRequest}>Accept</a> : null
                     }
                     {
-                        state == 'ACCEPTED' ? <a className='joined'>Request accepted!</a> : null
+                        (state == '' && !serverError) ? <a onClick={declineRequest}>Decline</a> : null
                     }
                     {
-                        state == 'DECLINED' ? <a className='joined'>Request declined!</a> : null
+                        (state == 'ACCEPTED' && !serverError) ? <a className='joined'>Request accepted!</a> : null
+                    }
+                    {
+                        (state == 'DECLINED' && !serverError) ? <a className='joined'>Request declined!</a> : null
                     }
                 </div>
             </div>
@@ -104,7 +150,9 @@ function RequestsContainer() {
     const [currentPage, setCurrentPage] = useState(1);
     const [tmpPage, setTmpPage] = useState(1);
     const [currentRequests, setCurrentRequests] = useState([]);
-    const [requestsPerPage, setRequestsPerPage] = useState(2);  // change to 9
+    const [requestsPerPage, setRequestsPerPage] = useState(9);
+    const [serverError, setServerError] = useState(false);
+    const [serverErrorMessages, setServerErrorMessages] = useState([]);
 
     useEffect(() => {
         const url = '/FriendRequest/GetPending';
@@ -121,7 +169,15 @@ function RequestsContainer() {
                 console.log(list);
                 setRequests(list);
             })
-            .catch(error => console.error(error.toString()))
+            .catch(error => {
+                setServerError(true);
+                let errorMessage = defaultErrorMessage;
+                if (error.response && error.response.data.length !== 0) {
+                    errorMessage = error.response.data;
+                }
+                setServerErrorMessages(prev => [...prev, errorMessage]);
+                console.error(error.toString());
+            })
             .finally(() => setLoading(false));
 
         const connection = new SignalR.HubConnectionBuilder()
@@ -137,7 +193,15 @@ function RequestsContainer() {
 
         connection.start()
             .then(() => console.log('Friend Request connection established.'))
-            .catch(error => console.error(error.toSTring()));
+            .catch(error => {
+                setServerError(true);
+                let errorMessage = defaultErrorMessage;
+                if (error.response && error.response.data.length !== 0) {
+                    errorMessage = error.response.data;
+                }
+                setServerErrorMessages(prev => [...prev, errorMessage]);
+                console.error(error.toSTring());
+            });
     }, [connection]);
 
     useEffect(() => {
@@ -191,6 +255,16 @@ function RequestsContainer() {
 
     return (
         <div>
+            {
+                serverError ?
+                    <div>
+                        {
+                            serverErrorMessages.map((error, step) => <Alert key={step} type='error' message={error} />)
+                        }
+                        <Alert type='error' message='Please reload the page and try again!' />
+                    </div> :
+                    null
+            }
             <div id='previous-page-mobile' onClick={previousPage}><span>&#8249;</span></div>
             <div id='next-page-mobile' onClick={nextPage}><span>&#8250;</span></div>
             <div className="card-container">

@@ -15,6 +15,8 @@ namespace ChatDemoSignalR.Models
             Notifications = new List<Notification>();
             FriendRequests = new List<FriendRequest>();
             JoinRoomRequests = new List<JoinRoomRequest>();
+            RoomsLimit = 5000;
+            FriendsLimit = 5000;
         }
 
         [Required]
@@ -24,6 +26,10 @@ namespace ChatDemoSignalR.Models
         [Required]
         [Display(Name = "Last Name")]
         public string LastName { get; set; }
+
+        public int RoomsLimit { get; set; }
+
+        public int FriendsLimit { get; set; }
 
         public ICollection<Message> Messages { get; set; }
 

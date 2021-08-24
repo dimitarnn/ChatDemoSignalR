@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import axios from 'axios';
 import Pagination from './Pagination';
 import PaginationInput from './PaginationInput';
+import Alert from './Alert';
 
 var app = document.getElementById('root');
 
@@ -31,19 +32,31 @@ function PrivateChat({ userId, userName }) {
 }
 
 function ChatContainer() {
+    const defaultErrorMessage = 'An error occurred!';
     const [usersList, setUsersList] = useState([]);
     const [loading, setLoading] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [tmpPage, setTmpPage] = useState(1);
     const [roomsPerPage, setRoomsPerPage] = useState(9);
     const [currentRooms, setCurrentRooms] = useState([]);
+    const [serverError, setServerError] = useState(false);
+    const [serverErrorMessages, setServerErrorMessages] = useState([]);
 
     useEffect(() => {
         setLoading(true);
+        setServerError(false);
         axios.get('/Chat/GetPrivateChats')
             .then(response => response.data)
             .then(list => { setUsersList(list); console.log(list) })
-            .catch(error => console.error(error.toString()))
+            .catch(error => {
+                setServerError(true);
+                let errorMessage = defaultErrorMessage;
+                if (error.response && error.response.data.length !== 0) {
+                    errorMessage = error.response.data;
+                }
+                setServerErrorMessages(prev => [...prev, errorMessage]);
+                console.error(error.toString());
+            })
             .finally(() => setLoading(false));
     }, []);
 
@@ -99,6 +112,16 @@ function ChatContainer() {
         setCurrentPage(prevPage => prevPage == 1 ? 1 : prevPage - 1);
     }
 
+    if (serverError) {
+        return (
+            <div className='center-div'>
+                {
+                    serverErrorMessages.map((error, step) => <Alert key={step} type='error' message={error} />)
+                }
+                <Alert type='error' message='Please refresh the page and try again!' />
+            </div>
+        );
+    }
     return (
         <div>
             <div id='previous-page-mobile' onClick={previousPage}><span>&#8249;</span></div>

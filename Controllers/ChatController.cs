@@ -65,33 +65,18 @@ namespace ChatDemoSignalR.Controllers
             return View();
         }
 
-        public async Task<IActionResult> Index()
-        {
-            List<ChatRoom> rooms = (await _unitOfWork.ChatRooms.GetAll()).ToList();
-            return View(rooms);
-        }
-
         [HttpGet]
         public async Task<IActionResult> GetAvailableRooms()
         {
             User user = await _userManager.GetUserAsync(User);
 
             if (user == null)
-                return BadRequest();
+                return BadRequest("User must be logged in!");
 
             //List<ChatRoom> rooms = (await _unitOfWork.ChatRooms.GetRoomsNotContainingUser(user)).ToList();
             List<ChatRoom> rooms = (await _unitOfWork.ChatRooms.GetAvailable(user)).ToList();
 
             return Ok(rooms);
-        }
-
-        public async Task<IActionResult> ListRooms()
-        {
-            var userId = _userManager.GetUserId(User);
-            var user = await _userManager.GetUserAsync(User);
-
-            List<ChatRoom> rooms = (await _unitOfWork.ChatRooms.GetRoomsNotContainingUser(user)).ToList();
-            return View(rooms);
         }
 
         public async Task<IActionResult> DisplayRooms()
@@ -127,7 +112,7 @@ namespace ChatDemoSignalR.Controllers
             User user = await _unitOfWork.Users.GetUserWithFollowing(userId);
 
             if (user == null)
-                return NotFound();
+                return BadRequest("User must be logged in!");
 
             List<UserVM> friends = new List<UserVM>();
             foreach (var tmp in user.Following)
@@ -204,15 +189,20 @@ namespace ChatDemoSignalR.Controllers
         public async Task<IActionResult> AddChatRoom(string roomName, string description, ChatType chatType)
         {
             User user = await _userManager.GetUserAsync(User);
+
             if (user == null)
-                return BadRequest();
+                return BadRequest("User must be logged in!");
 
             if (roomName == null || roomName.Length == 0)
-                return BadRequest();
+                return BadRequest("Ivalid room name!");
+
+            int userRoomsCnt = await _unitOfWork.ChatRooms.UserRoomsCount(user.Id);
+            if (userRoomsCnt >= user.RoomsLimit)
+                return BadRequest("User cannot add any more rooms!");
 
             bool isCreated = await _unitOfWork.ChatRooms.ContainsRoom(roomName);
             if (isCreated)
-                return BadRequest();
+                return BadRequest("Room name must be unique!");
 
             if (description == null)
                 description = "No description";
@@ -254,21 +244,6 @@ namespace ChatDemoSignalR.Controllers
         }
 
         [Authorize]
-        public async Task<IActionResult> PersonalPage()
-        {
-            var userId = _userManager.GetUserId(User);
-            var user = await _userManager.GetUserAsync(User);
-
-            List<Message> messages = _unitOfWork.Messages.Find(x => x.UserId == userId).ToList();
-
-            List<User> users = (await _unitOfWork.Users.GetUsersExcept(userId)).ToList();
-
-            var model = new PersonalPageVM { Messages = messages, Users = users };
-
-            return View(model);
-        }
-
-        [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetRoomsContainingUser()
         {
@@ -277,8 +252,6 @@ namespace ChatDemoSignalR.Controllers
 
             return Ok(rooms);
         }
-
-
 
         [Authorize]
         [HttpGet]
@@ -293,13 +266,13 @@ namespace ChatDemoSignalR.Controllers
             var userId = _userManager.GetUserId(User);
 
             if (user == null)
-                return NotFound("Could not find sender"); /// parameter ?
+                return BadRequest("User must be logged in!");
 
             var userName = user.UserName;
             User receiver = await _unitOfWork.Users.GetUserByName(target);
 
             if (receiver == null)
-                return NotFound("Coulld not find target"); /// parameter ?
+                return NotFound("Invalid target!");
 
             var message = new Message { Text = text, Sender = userName, SendTime = DateTime.Now, UserId = receiver.Id };
 
@@ -334,7 +307,7 @@ namespace ChatDemoSignalR.Controllers
             ChatRoom chatRoom = await _unitOfWork.ChatRooms.GetRoomWithUsers(roomName);
 
             if (chatRoom == null)
-                return BadRequest();
+                return BadRequest("Invalid room name!");
 
             if (chatRoom.ChatType == ChatType.Ephemeral)
                 return Ok(new MessageNotificationVM { Message = message, Notification = null });
@@ -432,7 +405,7 @@ namespace ChatDemoSignalR.Controllers
 
             if (chatRoom == null)
             {
-                return NotFound();
+                return BadRequest("Invalid room name!");
             }
 
             List<Message> messages = _unitOfWork.Messages.Find(x => x.ChatRoomId == chatRoom.Id).ToList();
@@ -447,7 +420,7 @@ namespace ChatDemoSignalR.Controllers
 
             if (chatRoom == null)
             {
-                return NotFound();
+                return BadRequest("Invalid room name");
             }
 
             List<Message> messages = (await _unitOfWork.Messages.GetNext(chatRoom.Id, skip, size)).ToList();
@@ -461,7 +434,7 @@ namespace ChatDemoSignalR.Controllers
 
             if (chatRoom == null)
             {
-                return NotFound();
+                return BadRequest("Invalid room name!");
             }
 
             List<Message> messages = _unitOfWork.Messages.Find(x => x.ChatRoomId == chatRoom.Id).ToList();
@@ -476,7 +449,7 @@ namespace ChatDemoSignalR.Controllers
             ChatRoom chatRoom = await _unitOfWork.ChatRooms.GetRoomWithUsers(roomName);
 
             if (chatRoom == null)
-                return BadRequest();
+                return BadRequest("Invalid room name!");
 
             if (!chatRoom.Users.Contains(user))
             {
@@ -535,7 +508,12 @@ namespace ChatDemoSignalR.Controllers
         public async Task<IActionResult> CreatePrivateRoom(string user1Id, string user2Id) // user2 is the request sender
         {
             User user1 = await _unitOfWork.Users.Get(user1Id);
+            if (user1 == null)
+                return BadRequest("Invalid user!");
+
             User user2 = await _unitOfWork.Users.Get(user2Id);
+            if (user2 == null)
+                return BadRequest("Invalid user!");
 
             int cmp = String.Compare(user1.Id, user2.Id);
             string roomName = (cmp <= 0 ? user1.Id : user2.Id) + "_" + (cmp <= 0 ? user2.Id : user1.Id);
@@ -543,7 +521,7 @@ namespace ChatDemoSignalR.Controllers
             ChatRoom room = await _unitOfWork.ChatRooms.GetByName(roomName);
 
             if (room != null)
-                return BadRequest();
+                return BadRequest("Private room already exists");
 
             room = new ChatRoom
             {

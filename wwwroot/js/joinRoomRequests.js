@@ -4,14 +4,18 @@ import axios from 'axios';
 import * as SignalR from '@microsoft/signalr';
 import Pagination from './Pagination';
 import PaginationInput from './PaginationInput';
+import Alert from './Alert';
 
 var root = document.getElementById('root');
+const defaultErrorMessage = 'An error occurred!';
 
 function JoinRoomRequest({ request, connection }) {
     const [state, setState] = useState('');
     const joinUrl = `/Chat/JoinRoom?roomName=${request.roomName}`;
     const acceptUrl = `/JoinRoomRequest/Accept?id=${request.id}`;
     const declineUrl = `/JoinRoomRequest/Decline?id=${request.id}`;
+    const [serverError, setServerError] = useState(false);
+    const [serverErrorMessages, setServerErrorMessages] = useState([]);
 
     useEffect(() => {
         console.log('request:');
@@ -39,9 +43,25 @@ function JoinRoomRequest({ request, connection }) {
                         request.status = 1; // accepted
                         connection.invoke('SendNotificationToUserId', notification.userId, notification);
                     })
-                    .catch(error => console.error(error.toString()));
+                    .catch(error => {
+                        setServerError(true);
+                        let errorMessage = defaultErrorMessage;
+                        if (error.response && error.response.data.length !== 0) {
+                            errorMessage = error.response.data;
+                        }
+                        setServerErrorMessages(prev => [...prev, errorMessage]);
+                        console.error(error.toString())
+                    });
             })
-            .catch(error => console.error(error.toString()));
+            .catch(error => {
+                setServerError(true);
+                let errorMessage = defaultErrorMessage;
+                if (error.response && error.response.data.length !== 0) {
+                    errorMessage = error.response.data;
+                }
+                setServerErrorMessages(prev => [...prev, errorMessage]);
+                console.error(error.toString())
+            });
     }
 
     const handleDecline = () => {
@@ -50,7 +70,15 @@ function JoinRoomRequest({ request, connection }) {
                 setState('DECLINED');
                 request.status = 2; // declined
             })
-            .catch(error => console.error(error.toString()));
+            .catch(error => {
+                setServerError(true);
+                let errorMessage = defaultErrorMessage;
+                if (error.response && error.response.data.length !== 0) {
+                    errorMessage = error.response.data;
+                }
+                setServerErrorMessages(prev => [...prev, errorMessage]);
+                console.error(error.toString())
+            });
     }
 
     return (
@@ -65,16 +93,25 @@ function JoinRoomRequest({ request, connection }) {
                     <p>{request.senderName}:</p>
                     <p>{request.text}</p>
                     {
-                        state == '' ? <a onClick={handleAccept}>Join</a> : null
+                        serverError ?
+                            <div>
+                                {
+                                    serverErrorMessages.map((error, step) => <Alert key={step} type='error' message={error} />)
+                                }
+                            </div> :
+                            null
                     }
                     {
-                        state == '' ? <a onClick={handleDecline}>Decline</a> : null
+                        (state == '' && !serverError) ? <a onClick={handleAccept}>Join</a> : null
                     }
                     {
-                        state == 'ACCEPTED' ? <a className='joined'>Accepted!</a> : null
+                        (state == '' && !serverError) ? <a onClick={handleDecline}>Decline</a> : null
                     }
                     {
-                        state == 'DECLINED' ? <a className='joined'>Declined!</a> : null
+                        (state == 'ACCEPTED' && !serverError) ? <a className='joined'>Accepted!</a> : null
+                    }
+                    {
+                        (state == 'DECLINED' && !serverError) ? <a className='joined'>Declined!</a> : null
                     }
                 </div>
             </div>
@@ -90,6 +127,8 @@ function RequestsContainer() {
     const [tmpPage, setTmpPage] = useState(1);
     const [currentRequests, setCurrentRequests] = useState([]);
     const [requestsPerPage, setRequestsPerPage] = useState(9);
+    const [serverError, setServerError] = useState(false);
+    const [serverErrorMessages, setServerErrorMessages] = useState([]);
 
     useEffect(() => {
         const url = '/JoinRoomRequest/GetJoinRoomRequests';
@@ -97,6 +136,15 @@ function RequestsContainer() {
         axios.get(url)
             .then(response => response.data)
             .then(list => setRequests(list))
+            .catch(error => {
+                console.error(error.toString());
+                setServerError(true);
+                let errorMessage = defaultErrorMessage;
+                if (error.response && error.response.data.length !== 0) {
+                    errorMessage = error.response.data;
+                }
+                setServerErrorMessages(prev => [...prev, errorMessage]);
+            })
             .finally(() => setLoading(false));
 
         const connection = new SignalR.HubConnectionBuilder()
@@ -112,7 +160,15 @@ function RequestsContainer() {
 
         connection.start()
             .then(() => console.log('Room Request connection established.'))
-            .catch(error => console.error(error.toString()));
+            .catch(error => {
+                setServerError(true);
+                let errorMessage = defaultErrorMessage;
+                if (error.response && error.response.data.length !== 0) {
+                    errorMessage = error.response.data;
+                }
+                setServerErrorMessages(prev => [...prev, errorMessage]);
+                console.error(error.toString())
+            });
     }, [connection]);
 
     useEffect(() => {
@@ -166,6 +222,16 @@ function RequestsContainer() {
 
     return (
         <div>
+            {
+                serverError ?
+                    <div>
+                        {
+                            serverErrorMessages.map((error, step) => <Alert key={step} type='error' message='error' />)
+                        }
+                        <Alert type='error' message='Please reload the page and try again!' />
+                    </div> :
+                    null
+            }
             <div id='previous-page-mobile' onClick={previousPage}><span>&#8249;</span></div>
             <div id='next-page-mobile' onClick={nextPage}><span>&#8250;</span></div>
             <div className='card-container'>

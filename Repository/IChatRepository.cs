@@ -38,5 +38,7 @@ namespace ChatDemoSignalR.Repository
 
         Task<bool> RoomContainsUser(string roomName, User user);
 
+        Task<int> UserRoomsCount(string userId);
+
     }
 }

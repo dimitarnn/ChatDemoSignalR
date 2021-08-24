@@ -3,7 +3,9 @@ import ReactDOM from 'react-dom';
 import axios from 'axios';
 import Pagination from './Pagination';
 import PaginationInput from './PaginationInput';
+import Alert from './Alert';
 
+const defaultErrorMessage = 'An error occurred!';
 var root = document.getElementById('root');
 
 function ChatRoom({ room }) {
@@ -21,12 +23,6 @@ function ChatRoom({ room }) {
                 </div>
             </div>
         </div>
-        //<div className="chatroom">
-        //    <div className="chatroom-header">{roomName}</div>
-        //    <div className="chatroom-body">
-        //        <a href={url} className="btn-dark">Invide Users</a>
-        //    </div>
-        //</div>
     )
 }
 
@@ -37,6 +33,8 @@ function ChatRoomsContainer() {
     const [tmpPage, setTmpPage] = useState(1);
     const [roomsPerPage, setRoomsPerPage] = useState(9);
     const [currentRooms, setCurrentRooms] = useState([]);
+    const [serverError, setServerError] = useState(false);
+    const [serverErrorMessages, setServerErrorMessages] = useState([]);
 
     useEffect(() => {
         const url = '/Chat/GetRoomsCreatedBy';
@@ -45,7 +43,15 @@ function ChatRoomsContainer() {
         axios.get(url)
             .then(response => response.data)
             .then(list => setRooms(list))
-            .catch(error => console.error(error.toString()))
+            .catch(error => {
+                setServerError(true);
+                let errorMessage = defaultErrorMessage;
+                if (error.response && error.response.data.length !== 0) {
+                    errorMessage = error.response.data;
+                }
+                setServerErrorMessages(prev => [...prev, errorMessage]);
+                console.error(error.toString());
+            })
             .finally(() => setLoading(false));
     }, []);
 
@@ -100,6 +106,16 @@ function ChatRoomsContainer() {
 
     return (
         <div>
+            {
+                serverError ?
+                    <div>
+                        {
+                            serverErrorMessages.map((error, step) => <Alert key={step} type='error' message={error} />)
+                        }
+                        <Alert type='error' message='Please reload the page and try again!' />
+                    </div> :
+                    null
+            }
             <div id='previous-page-mobile' onClick={previousPage}><span>&#8249;</span></div>
             <div id='next-page-mobile' onClick={nextPage}><span>&#8250;</span></div>
             <div id='chat-rooms-container'>
