@@ -1,7 +1,7 @@
 ﻿const path = require('path');
 
 module.exports = {
-    mode: 'development',
+    mode: 'production',
     entry: {
         main: './wwwroot/js/app.js',
         displayAllPrivateChats: './wwwroot/js/displayAllPrivateChats.js',
@@ -17,6 +17,8 @@ module.exports = {
         displayRoomsContainingUser: './wwwroot/js/displayRoomsContainingUser.js',
         register: './wwwroot/js/register.js',
         login: './wwwroot/js/login.js',
+        addImage: './wwwroot/js/addImage.js',
+        uploadFile: './wwwroot/js/uploadFile.js',
     },
     output: {
         path: path.resolve(__dirname, './wwwroot/js/dist'),

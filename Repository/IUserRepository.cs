@@ -32,5 +32,7 @@ namespace ChatDemoSignalR.Repository
 
         Task<bool> IsFriendsWith(string userId, string friendId);
 
+        Task<int> CreatedRoomsCount(string userId);
+
     }
 }

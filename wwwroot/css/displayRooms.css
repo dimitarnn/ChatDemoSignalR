@@ -1,18 +1,44 @@
 ﻿#create-room-form {
+    /*display: none;*/
     border-radius: 1.2rem;
     width: 20rem;
     /*background: #15172b;*/
     background: #2a2b2f;
     padding: 1.2rem;
-    margin-bottom: 2.5rem;
+    margin: 0 auto 2.5rem auto;
     position: relative;
     box-shadow: inset 0.3rem 0.3rem 0.3rem rgba(0, 0, 0, 0.2),
                 inset -0.3rem -0.3rem 0.9rem rgba(255, 255, 255, 0.1),
                 0.3rem 0.3rem 0.9rem rgba(0, 0, 0, 0.3);
+
+    transform: scale(1, 0);
+    transform-origin: top;
+    transition: transform 400ms ease-in-out;
+}
+
+#create-room-trigger {
+    font-size: 1.5em;
+    position: absolute;
+    width: 20rem;
+    background: #2a2b2f;
+    border-radius: 1.2rem 1.2rem;
+    box-shadow: inset 0.3rem 0.3rem 0.3rem rgba(0, 0, 0, 0.2),
+                inset -0.3rem -0.3rem 0.9rem rgba(255, 255, 255, 0.1),
+                0.3rem 0.3rem 0.9rem rgba(0, 0, 0, 0.3);
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    transition: transform 400ms ease-in-out;
+    height: auto;
 }
 
 @media screen and (min-width: 768px) {
     #create-room-form {
+        width: 40rem;
+    }
+
+    #create-room-trigger {
         width: 40rem;
     }
 }
@@ -84,10 +110,13 @@
 }
 
 #form-container {
-    width: 100%;
     display: flex;
+    min-height: 10rem;
+    position: relative;
+    width: 100%;
+/*    display: flex;
     align-content: start;
-    justify-content: center;
+    justify-content: center;*/
 }
 
 .enter-room-button {
@@ -224,9 +253,29 @@
     grid-template-columns: 1fr;
 }
 
-@media screen and (min-width: 768px) {
+@media screen and (min-width: 860px) {
     #chat-rooms-container {
-        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-columns: 1fr 1fr;
         width: 80vw;
     }
+}
+
+@media screen and (min-width: 1290px) {
+    #chat-rooms-container {
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+}
+
+#create-room-checkbox {
+    display: none;
+}
+
+/*#create-room-checkbox:checked ~ #create-room-trigger {
+    transform: scale(1, 0);
+}*/
+
+#create-room-checkbox:checked ~ #create-room-form {
+    display: block;
+    transform: scale(1, 1);
+    transition: transform 400ms ease-in-out;
 }

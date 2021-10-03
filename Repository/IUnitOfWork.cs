@@ -19,6 +19,8 @@ namespace ChatDemoSignalR.Repository
 
         IJoinRoomRequestRepository JoinRoomRequests { get; }
 
+        IImageRepository Images { get; }
+
         Task<int> Complete();
     }
 }

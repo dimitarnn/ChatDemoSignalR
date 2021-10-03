@@ -2,39 +2,124 @@
     ViewData["Title"] = "Home Page";
 }
 
-<div class="main-container">
-    <div class="center-div">
-        <div class="text-center">
-            <h1 class="display-4">Welcome</h1>
-            <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-        </div>
+<h1>Update #2</h1>
 
-        <div class="text-center">
-            <div class="form">
-                <input type="text" id="email" class="form-input" autocomplete="off" placeholder=" " />
-                <label for="email" class="form-label">Email</label>
+<div class="card-container">
+
+    <div class="card-rainbow">
+        <div class="card-face card-face1">
+            <div class="card-content">
+                <span class="stars"></span>
+                <h2 class="card-header">All rooms</h2>
+                <p class="card-text">
+                    All available rooms
+                </p>
+                <a class="link" asp-controller="Chat" asp-action="DisplayRooms">Browse rooms</a>
             </div>
         </div>
-
-        <a class="btn btn-success" asp-controller="Home" asp-action="TestView">Go to Test View</a>
-
-        <a class="btn btn-success" asp-controller="JoinRoomRequest" asp-action="Index">Received Join room requests</a>
-
-        <a class="btn btn-success" asp-controller="Chat" asp-action="DisplayRoomsCreatedBy">Rooms created by me</a>
-
-        <a class="btn btn-success" asp-controller="Chat" asp-action="DisplayRoomsContainingUser">Rooms I've joined</a>
-
-        <a class="btn btn-success" asp-controller="Chat" asp-action="DisplayAvailableRooms">Rooms available to join</a>
-
-        <a class="btn btn-success" asp-controller="FriendRequest" asp-action="ListAvailable">Available users</a>
-
-        @*<a class="btn btn-success" asp-controller="" asp-action=""></a>*@
-
-        <div id="root">
-
+        <div class="card-face card-face2">
+            <h2>Chat rooms</h2>
         </div>
     </div>
+
+    <div class="card-rainbow">
+        <div class="card-face card-face1">
+            <div class="card-content">
+                <span class="stars"></span>
+                <h2 class="card-header">Pending friend requests</h2>
+                <p class="card-text">
+                    Pending friend requests, sent from other users
+                </p>
+                <a class="link" asp-controller="FriendRequest" asp-action="ListPending">View pending friend requests</a>
+            </div>
+        </div>
+        <div class="card-face card-face2">
+            <h2>Friend requests</h2>
+        </div>
+    </div>
+
+    <div class="card-rainbow">
+        <div class="card-face card-face1">
+            <div class="card-content">
+                <span class="stars"></span>
+                <h2 class="card-header">Invites</h2>
+                <p class="card-text">
+                    A list of all received Join room requests, sent by the rooms' creators.
+                </p>
+                <a class="link" asp-controller="JoinRoomRequest" asp-action="Index">Go</a>
+            </div>
+        </div>
+        <div class="card-face card-face2">
+            <h2>Room Invites</h2>
+        </div>
+    </div>
+
+    <div class="card-rainbow">
+        <div class="card-face card-face1">
+            <div class="card-content">
+                <span class="stars"></span>
+                <h2 class="card-header">Rooms</h2>
+                <p class="card-text">
+                    A list of all the rooms created by me.
+                </p>
+                <a class="link" asp-controller="Chat" asp-action="DisplayRoomsCreatedBy">Go</a>
+            </div>
+        </div>
+        <div class="card-face card-face2">
+            <h2>My Rooms</h2>
+        </div>
+    </div>
+
+    <div class="card-rainbow">
+        <div class="card-face card-face1">
+            <div class="card-content">
+                <span class="stars"></span>
+                <h2 class="card-header">Joined Rooms & private chats</h2>
+                <p class="card-text">
+                    A list of all the rooms I've joined & all private chats.
+                </p>
+                <a class="link" asp-controller="Chat" asp-action="DisplayRoomsContainingUser">Go</a>
+            </div>
+        </div>
+        <div class="card-face card-face2">
+            <h2>Joined Rooms</h2>
+        </div>
+    </div>
+
+    <div class="card-rainbow">
+        <div class="card-face card-face1">
+            <div class="card-content">
+                <span class="stars"></span>
+                <h2 class="card-header">Available rooms</h2>
+                <p class="card-text">
+                    A list of the rooms available to join.
+                </p>
+                <a class="link" asp-controller="Chat" asp-action="DisplayAvailableRooms">Go</a>
+            </div>
+        </div>
+        <div class="card-face card-face2">
+            <h2>Available rooms</h2>
+        </div>
+    </div>
+
+    <div class="card-rainbow">
+        <div class="card-face card-face1">
+            <div class="card-content">
+                <span class="stars"></span>
+                <h2 class="card-header">Available users</h2>
+                <p class="card-text">
+                    List of all users you could send request.
+                </p>
+                <a class="link" asp-controller="FriendRequest" asp-action="ListAvailable">Available users</a>
+            </div>
+        </div>
+        <div class="card-face card-face2">
+            <h2>Available users</h2>
+        </div>
+    </div>
+
 </div>
+
 
 @*@section Scripts {
     <script src="~/js/dist/main.bundle.js"></script>

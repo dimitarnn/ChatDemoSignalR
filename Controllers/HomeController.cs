@@ -6,20 +6,40 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using ChatDemoSignalR.Models;
+using System.Net;
+using System.Web;
+using Serilog;
+using System.Threading;
+using ChatDemoSignalR.Data;
 
 namespace ChatDemoSignalR.Controllers
 {
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
+        private readonly AppDbContext _context;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(ILogger<HomeController> logger, AppDbContext context)
         {
             _logger = logger;
+            _context = context;
+        }
+
+        public IActionResult WebUrl(string url)
+        {
+            return Ok(WebUtility.UrlEncode(url));
+        }
+
+        public IActionResult HttpUrl(string url)
+        {
+            return Ok(HttpUtility.UrlEncode(url));
         }
 
         public IActionResult Index()
         {
+            List<LogEvent> events = _context.LogEvents.ToList();
+
+            Log.Information("User with Thread {Thread} visited /Home/Index at {Now}", Thread.CurrentThread.ManagedThreadId, DateTime.Now);
             return View();
         }
 

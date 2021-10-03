@@ -70,6 +70,8 @@ namespace ChatDemoSignalR.Controllers
             if (chatRoom == null)
                 return BadRequest("Invalid room name!");
 
+            // add validation for user
+
             if ((await _unitOfWork.JoinRoomRequests.HasSent(sender.Id, userId, roomName))) // already sent
                 return BadRequest("User is already invited!");
 

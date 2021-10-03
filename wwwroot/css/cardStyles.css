@@ -4,7 +4,7 @@
     position: relative;
     font-family: 'Courier New', 'Courier', sans-serif;
 /*  default width: 18rem; height: 25rem;*/
-    width: 20rem;
+    width: 25rem;
     height: 28rem;
     margin: 0 auto;
     background: #000;
@@ -37,7 +37,8 @@
 }
 
 .card-rainbow .card-face.card-face1 .card-text {
-    margin: 1rem 0;
+    margin-top: 1rem;
+    text-align: left;
 }
 
 .card-rainbow .card-face.card-face2 {
@@ -47,7 +48,9 @@
 .card-rainbow .card-face.card-face2 h2 {
     margin: 0;
     padding: 0;
-    font-size: 10em;
+    font-size: 3em;
+    max-width: 100%;
+    text-align: center;
     color: #fff;
     transition: 0.5s;
     text-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
@@ -62,7 +65,7 @@
     font-size: 2em;
 }
 
-.card-rainbow:nth-child(1) .card-face.card-face2 {
+.card-rainbow:nth-child(n) .card-face.card-face2 {
     /*background-image: linear-gradient(40deg, #fffc00 0%, #fc00ff 45%, #00fffc 100%);*/
     background-image: linear-gradient(40deg, #00D6AA 0%, rgb(197, 199, 250) 45%, rgb(233, 242, 254) 100%);
     border-radius: 0.9rem;

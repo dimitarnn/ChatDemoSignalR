@@ -63,9 +63,12 @@ function Request({ request, connection }) {
                         setServerError(true);
                         let errorMessage = defaultErrorMessage;
                         if (error.response && error.response.data.length !== 0) {
-                            errorMessage = error.response.data;
+                            let serverErrors = error.response.data;
+                            setServerErrorMessages(prev => [...prev, ...serverErrors]);
                         }
-                        setServerErrorMessages(prev => [...prev, errorMessage]);
+                        else
+                            setServerErrorMessages(prev => [...prev, errorMessage]);
+                        //setServerErrorMessages(prev => [...prev, errorMessage]);
                         console.error(error.toString())
                     });
 

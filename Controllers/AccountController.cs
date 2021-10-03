@@ -13,6 +13,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using ChatDemoSignalR.Repository;
 using ChatDemoSignalR.Services;
+using System.Net;
+using System.Web;
+using FluentValidation.Results;
+using FluentValidation;
 
 namespace ChatDemoSignalR.Controllers
 {
@@ -23,18 +27,21 @@ namespace ChatDemoSignalR.Controllers
         private readonly IHubContext<MessageHub> _chat;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMailService _mailService;
+        private readonly IValidator<User> _userValidator;
 
         public AccountController(SignInManager<User> signInManager,
             UserManager<User> userManager,
             IHubContext<MessageHub> chat,
             IUnitOfWork unitOfWork,
-            IMailService mailService)
+            IMailService mailService,
+            IValidator<User> userValidator)
         {
             _signInManager = signInManager;
             _userManager = userManager;
             _chat = chat;
             _unitOfWork = unitOfWork;
             _mailService = mailService;
+            _userValidator = userValidator;
         }
 
         [HttpGet]
@@ -47,6 +54,7 @@ namespace ChatDemoSignalR.Controllers
         public async Task<IActionResult> Login(string username, string password)
         {
             var user = await _userManager.FindByNameAsync(username);
+            List<string> errors = new List<string>();
 
             if (user != null)
             {
@@ -57,9 +65,12 @@ namespace ChatDemoSignalR.Controllers
                     return Ok();
                     //return RedirectToAction("Index", "Home");
                 }
+                errors.Add("Invalid username or password!");
+                return BadRequest(errors);
             }
 
-            return BadRequest();
+            errors.Add("Specified username doesn't exist!");
+            return BadRequest(errors);
             //return RedirectToAction("Login", "Account");
         }
 
@@ -80,14 +91,32 @@ namespace ChatDemoSignalR.Controllers
                 LastName = lastName
             };
 
+            ValidationResult validationResult = _userValidator.Validate(user);
+            List<string> errors = new List<string>();
+
+            if (!validationResult.IsValid)
+            {
+                foreach (var error in validationResult.Errors)
+                {
+                    errors.Add(error.ErrorMessage);
+                }
+
+                return BadRequest(errors);
+            }
+
             var result = await _userManager.CreateAsync(user, password);
 
             if (result.Succeeded)
             {
                 // generate email token
                 var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                //token = HttpUtility.UrlEncode(token);
                 var link = Url.Action(nameof(VerifyEmail), "Account", new { userId = user.Id, token }, Request.Scheme, Request.Host.ToString());
-
+                var newLink = @"https://localhost:44375/Account/VerifyEmail?userId=" +
+                    user.Id + "&token=" + HttpUtility.UrlEncode(token);
+                var productionLink = @"http://chatdemo.local/Account/VerifyEmail?userId=" +
+                    user.Id + "&token=" + HttpUtility.UrlEncode(token);
+                
                 ConfirmationEmail request = new ConfirmationEmail
                 {
                     ToEmail = user.Email,
@@ -96,18 +125,15 @@ namespace ChatDemoSignalR.Controllers
 
                 await _mailService.SendConfirmationEmail(request, link);
 
-                //return RedirectToAction("EmailVerification");
                 return Ok();
-                //await _signInManager.SignInAsync(user, isPersistent: false);
-                //return RedirectToAction("Index", "Home");
             }
 
             foreach (var error in result.Errors)
             {
-                ModelState.AddModelError("", error.Description);
+                errors.Add(error.Description);
             }
 
-            return BadRequest();
+            return BadRequest(errors);
         }
 
         public async Task<IActionResult> VerifyEmail(string userId, string token)
@@ -115,6 +141,8 @@ namespace ChatDemoSignalR.Controllers
             User user = await _userManager.FindByIdAsync(userId);
             if (user == null)
                 return BadRequest();
+
+            // decode token
 
             var result = await _userManager.ConfirmEmailAsync(user, token);
 

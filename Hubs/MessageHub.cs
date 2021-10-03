@@ -4,6 +4,7 @@ using ChatDemoSignalR.Models;
 using ChatDemoSignalR.Repository;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,7 +27,16 @@ namespace ChatDemoSignalR.Hubs
         {
             if (notification == null)
                 return;
-            
+
+            string username = Context.User.Identity.Name ?? "Anonymous";
+
+            Log.Information("[CUSTOM] User [{User}] connection {ConnectionId} sending notification [{Notification}] to group [{group}] at {Now}",
+                username,
+                Context.ConnectionId,
+                notification,
+                group,
+                DateTime.Now);
+
             ChatRoom chatRoom = await _unitOfWork.ChatRooms.GetByName(group);
             List<User> users = (await _unitOfWork.Users.GetUsersInRoom(chatRoom)).ToList();
 
@@ -100,11 +110,28 @@ namespace ChatDemoSignalR.Hubs
 
         public async Task JoinGroup(string group)
         {
+            string username = Context.User.Identity.Name ?? "Anonymous";
+
+            Log.Information("[CUSTOM] User [{User}] connection {ConnectionId} joining group [{Group}] at {Now}",
+                username,
+                Context.ConnectionId,
+                group,
+                DateTime.Now);
+
             await Groups.AddToGroupAsync(Context.ConnectionId, group);
         }
 
         public async Task SendMessageToGroup(string group, Message message)
         {
+            string username = Context.User.Identity.Name ?? "Anonymous";
+
+            Log.Information("[CUSTOM] User [{User}] connection {ConnectionId} sending message [{Message}] to group [{Group}] at {Now}",
+                username,
+                Context.ConnectionId,
+                message,
+                group,
+                DateTime.Now);
+
             await Clients.Group(group).SendAsync("ReceiveMessage", message);
         }
 
@@ -119,6 +146,13 @@ namespace ChatDemoSignalR.Hubs
         {
             /// single user groups
             var username = Context.User.Identity.Name;
+            //var transport = Context.Items;
+
+            Log.Information("[CUSTOM] User {Username} connected with {ConnectionId} at {Now}",
+                username == null ? "<Anonymous>" : $"[{username}]",
+                Context.ConnectionId,
+                DateTime.Now);
+
             if (username != null)
             {
                 await Groups.AddToGroupAsync(Context.ConnectionId, username);
@@ -126,13 +160,18 @@ namespace ChatDemoSignalR.Hubs
                 _connections.Add(username, Context.ConnectionId);
             }
 
-            await Clients.All.SendAsync("UserConnected", Context.ConnectionId);
+            //await Clients.All.SendAsync("UserConnected", Context.ConnectionId);
             await base.OnConnectedAsync();
         }
 
         public override async Task OnDisconnectedAsync(Exception ex)
         {
             string username = Context.User.Identity.Name;
+
+            Log.Information("[CUSTOM] User {Username} disconnected {ConnectionId} at {Now}",
+                username == null ? "<Anonymous>" : $"[{username}]",
+                Context.ConnectionId,
+                DateTime.Now);
 
             if (username != null)
             {

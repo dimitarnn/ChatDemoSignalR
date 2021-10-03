@@ -4,6 +4,7 @@ import axios from 'axios';
 import Alert from './Alert';
 
 var root = document.getElementById('root');
+const defaultErrorMessage = 'An error occurred!';
 
 const Login = () => {
     const [state, setState] = useState({
@@ -13,6 +14,7 @@ const Login = () => {
     const [errors, setErrors] = useState({});
     const [success, setSuccess] = useState(false);
     const [serverError, setServerError] = useState(false);
+    const [serverErrorMessages, setServerErrorMessages] = useState([]);
     const [loggedIn, setLoggedIn] = useState(false);
 
     const handleChange = event => {
@@ -21,6 +23,9 @@ const Login = () => {
         delete allErrors[event.target.name];
         setErrors(allErrors);
 
+        setSuccess(false);
+        setServerError(false);
+        setServerErrorMessages([]);
         event.preventDefault();
     }
 
@@ -72,20 +77,33 @@ const Login = () => {
                 setLoggedIn(true);
             })
             .catch(error => {
+                console.log('error: ');
+                console.log(error);
+                console.log('error.response: ');
+                console.log(error.response);
+                console.log('error.response.data: ');
+                console.log(error.response.data);
                 setServerError(true);
-                console.error(error.toString());
-                reset();
+                if (error.response && error.response.data.length !== 0) {
+                    let serverErrors = error.response.data;
+                    setServerErrorMessages(prev => [...prev, ...serverErrors]);
+                }
+                else {
+                    setServerErrorMessages(prev => [...prev, defaultErrorMessage]);
+                }
+                //reset();
             });
     }
 
-    if (serverError) {
-        return (
-            <div className='center-div'>
-                <Alert type='error' message='An error occurred!' />
-                <a href='/Account/Login' className='btn-success'>Try again</a>
-            </div>
-        );
-    }
+    //if (serverError) {
+    //    return (
+    //        <div className='center-div'>
+    //            {
+    //                serverErrorMessages.map(error => <Alert type='error' message={error} />)
+    //            }
+    //        </div>
+    //    );
+    //}
     if (loggedIn) {
         return (
             <div className='center-div'>
@@ -96,9 +114,17 @@ const Login = () => {
     }
     return (
         <div className='center-div'>
+            {
+                serverError &&
+                <div>
+                    {
+                        serverErrorMessages.map(error => <Alert type='error' message={error} />)
+                    }
+                </div>
+            }
             <form onSubmit={handleSubmit}>
                 {
-                    success && <Alert type='success' message='Submitted successfully!' />
+                    (success && !serverError) && <Alert type='success' message='Submitted successfully!' />
                 }
                 <div className='form'>
                     <input
@@ -108,6 +134,7 @@ const Login = () => {
                         className='form-input'
                         placeholder=' '
                         autoComplete='off'
+                        value={state.username}
                         onChange={handleChange}
                     />
                     <label htmlFor='username' className='form-label'>Username</label>
@@ -121,6 +148,7 @@ const Login = () => {
                         className='form-input'
                         placeholder=' '
                         autoComplete='off'
+                        value={state.password}
                         onChange={handleChange}
                     />
                     <label htmlFor='password' className='form-label'>Password</label>

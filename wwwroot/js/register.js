@@ -4,6 +4,7 @@ import axios from 'axios';
 import Alert from './Alert';
 
 var root = document.getElementById('root');
+const defaultErrorMessage = 'An error occurred!';
 
 const RegisterForm = () => {
     const [state, setState] = useState({
@@ -18,6 +19,7 @@ const RegisterForm = () => {
     const [success, setSuccess] = useState(false);
     const [hasSentEmail, setHasSentEmail] = useState(false);
     const [serverError, setServerError] = useState(false);
+    const [serverErrorMessages, setServerErrorMessages] = useState([]);
 
     const validateForm = () => {
         const errors = {};
@@ -26,6 +28,8 @@ const RegisterForm = () => {
             errors.username = 'Please enter an username!';
         } else if (state.username.length <= 1) {
             errors.username = 'Username must be at least 2 characters long!';
+        } else if (state.username.length > 150) {
+            errors.username = 'Username must be less than 150 characters!';
         }
 
         if (state.email.length === 0) {
@@ -42,12 +46,16 @@ const RegisterForm = () => {
             errors.firstName = 'First name is required!';
         } else if (state.firstName.length <= 1) {
             errors.firstName = 'First name must be at least 2 characters long!';
+        } else if (state.firstName.length > 150) {
+            errors.firstName = 'First name must be less than 150 characters!';
         }
 
         if (state.lastName.length === 0) {
             errors.lastName = 'Last name is required!';
         } else if (state.lastName.length <= 1) {
             errors.lastName = 'Last name must be at least 2 characters long!';
+        } else if (state.lastName.length > 150) {
+            errors.lastName = 'Last name must be less than 150 characters!';
         }
 
         if (state.password.length === 0) {
@@ -72,6 +80,10 @@ const RegisterForm = () => {
         delete allErrors[event.target.name];
         setErrors(allErrors);
 
+        setServerError(false);
+        setServerErrorMessages([]);
+        setSuccess(false);
+
         event.preventDefault();
     }
 
@@ -88,6 +100,7 @@ const RegisterForm = () => {
         setSuccess(true);
         const url = '/Account/Register';
         setServerError(false);
+        setServerErrorMessages([]);
 
         axios.post(url, null, {
             params: {
@@ -106,6 +119,14 @@ const RegisterForm = () => {
             .catch(error => {
                 console.error(error.toString());
                 setServerError(true);
+                let errorMessage = defaultErrorMessage;
+                if (error.response && error.response.data.length !== 0) {
+                    let serverErrors = error.response.data;
+                    setServerErrorMessages(prev => [...prev, ...serverErrors]);
+                }
+                else {
+                    setServerErrorMessages(prev => [...prev, errorMessage]);
+                }
             });
     }
 
@@ -120,17 +141,22 @@ const RegisterForm = () => {
         });
 
         setErrors({});
+        setServerError(false);
+        setServerErrorMessages([]);
+        setSuccess(false);
     }
 
-    if (serverError) {
-        return (
-            <div>
-                <h1>An error occurred!</h1>
-                <Alert type='error' message='An error occurred while contacting the server' />
-                <a href='/Account/Register' className='btn-success'>Try again</a>
-            </div>
-        );
-    }
+    //if (serverError) {
+    //    return (
+    //        <div className='center-div'>
+    //            {
+    //                serverErrorMessages.map(error => <Alert type='error' message={error} />)
+    //            }
+    //            <Alert type='error' message='An error occurred while contacting the server' />
+    //            <a href='/Account/Register' className='btn-success'>Try again</a>
+    //        </div>
+    //    );
+    //}
     if (hasSentEmail) {
         return (
             <div>
@@ -141,11 +167,20 @@ const RegisterForm = () => {
     }
     return (
         <div className='center-div'>
-            <h2>Register</h2>
+            <h2 className='register'>Register</h2>
 
             <form onSubmit={handleSubmit}>
                 {
-                    success && <Alert type='success' message='Form sent successfully!' />
+                    (success && !serverError) && <Alert type='success' message='Form sent successfully!' />
+                }
+                {
+                    serverError ?
+                        <div>
+                            {
+                                serverErrorMessages.map(error => <Alert type='error' message={error} />)
+                            }
+                        </div> :
+                        null
                 }
                 <div className="form">
                     <input
@@ -155,6 +190,7 @@ const RegisterForm = () => {
                         id="username"
                         placeholder=" "
                         autoComplete="off"
+                        value={state.username}
                         onChange={handleChange}
                     />
                     <label htmlFor="username" className="form-label">Username</label>
@@ -168,6 +204,7 @@ const RegisterForm = () => {
                         id="email"
                         placeholder=" "
                         autoComplete="off"
+                        value={state.email}
                         onChange={handleChange}
                     />
                     <label htmlFor="email" className="form-label">Email</label>
@@ -180,6 +217,7 @@ const RegisterForm = () => {
                         id="firstName"
                         placeholder=" "
                         autoComplete="off"
+                        value={state.firstName}
                         onChange={handleChange}
                     />
                     <label htmlFor="firstName" className="form-label">First Name</label>
@@ -192,6 +230,7 @@ const RegisterForm = () => {
                         id="lastName"
                         placeholder=" "
                         autoComplete="off"
+                        value={state.lastName}
                         onChange={handleChange}
                     />
                     <label htmlFor="lastName" className="form-label">Last Name</label>
@@ -205,6 +244,7 @@ const RegisterForm = () => {
                         name="password"
                         placeholder=" "
                         autoComplete="off"
+                        value={state.password}
                         onChange={handleChange}
                     />
                     <label htmlFor="password" className="form-label">Password</label>
@@ -218,6 +258,7 @@ const RegisterForm = () => {
                         name="confirmPassword"
                         placeholder=" "
                         autoComplete="off"
+                        value={state.confirmPassword}
                         onChange={handleChange}
                     />
                     <label htmlFor="confirmPassword" className="form-label">Confirm Password</label>

@@ -14,6 +14,8 @@
     "jquery": "^3.6.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
+    "uuid": "^8.3.2",
+    "uuidv4": "^6.2.12",
     "webpack": "^5.36.2",
     "webpack-cli": "^4.7.0"
   },
@@ -22,6 +24,7 @@
     "watch": "webpack --watch"
   },
   "dependencies": {
+    "luxon": "^2.0.2",
     "moment": "^2.29.1"
   }
 }

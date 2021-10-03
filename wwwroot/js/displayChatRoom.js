@@ -1,40 +1,14 @@
 ﻿import React, { useState, useEffect, useReducer, useRef } from 'react';
 import ReactDOM from 'react-dom';
-import $ from 'jquery';
+//import $ from 'jquery';
 import * as signalR from '@microsoft/signalr';
 import Message from './Message';
-import axios from 'axios';
-import moment from 'moment';
+//import axios from 'axios';
+//import moment from 'moment';
+import { DateTime } from 'luxon';
 import Alert from './Alert';
 
 var app = document.getElementById('root');
-
-function addLeadingZeros(n) {
-    if (n <= 9)
-        return '0' + n;
-    return n;
-}
-
-function formatDate(date, isFullDate) {
-    console.log(date);
-    date = new Date(date);
-    var year = date.getFullYear();
-    var month = date.getMonth() + 1;
-    month = addLeadingZeros(month);
-    var day = date.getDate();
-    day = addLeadingZeros(day);
-    var hours = date.getHours();
-    hours = addLeadingZeros(hours);
-    var minutes = date.getMinutes();
-    minutes = addLeadingZeros(minutes);
-    var seconds = date.getSeconds();
-    seconds = addLeadingZeros(seconds);
-
-    let fullDate = day + '/' + month + '/' + year + ' ' + hours + ':' + minutes + ':' + seconds;
-    let shortDate = day + '/' + month + ' ' + hours + ':' + minutes;
-
-    return (isFullDate === true ? fullDate : shortDate);
-}
 
 function Info({ roomName, user }) {
     const [cypher, setCypher] = useState(1);
@@ -188,48 +162,53 @@ function Messages({ displayCnt, updateMessages, messages }) {
     const [serverErrorMessages, setServerErrorMessages] = useState([]);
 
     useEffect(() => {
-        setLoading(true);
-        setServerError(false);
-        axios.get('/Chat/GetMessageCount/', {
-            params: {
-                roomName: _roomName
-            }
-        })
-            .then(response => response.data)
-            .then(count => {
-                dispatch({ type: 'UPDATE_TOTAL', payload: { total: count } });
-            })
-            .catch(error => {
-                setServerError(true);
-                let errorMessage = defaultErrorMessage;
-                if (error.response && error.response.data.length !== 0) {
-                    errorMessage = error.response.data;
-                }
-                setServerErrorMessages(prev => [...prev, errorMessage]);
-                console.error(error.toString());
+        import('axios').then(({ default: axios }) => {
+            setLoading(true);
+            setServerError(false);
 
-            })
-            .finally(() => setLoading(false));
-
-        // '/Chat/GetMessages', { params: { roomName: _roomName, index: 0, size: displayCnt } }
-        // roomName has a space ' ' instead of '%20'
-        setLoading(true);
-        axios.get(`/Chat/GetMessages?roomName=${_roomName}&skip=0&size=${displayCnt}`)
-            .then(response => response.data)
-            .then(list => {
-                dispatch({ type: 'SET_COUNT', payload: { currentCount: list.length } });
-                updateMessages(list, true);
-            })
-            .catch(error => {
-                setServerError(true);
-                let errorMessage = defaultErrorMessage;
-                if (error.response && error.response.data.length !== 0) {
-                    errorMessage = error.response.data;
+            axios.get('/Chat/GetMessageCount/', {
+                params: {
+                    roomName: _roomName
                 }
-                setServerErrorMessages(prev => [...prev, errorMessage]);
-                console.error(error.toString());
             })
-            .finally(() => setLoading(false));
+                .then(response => response.data)
+                .then(count => {
+                    dispatch({ type: 'UPDATE_TOTAL', payload: { total: count } });
+                })
+                .catch(error => {
+                    setServerError(true);
+                    let errorMessage = defaultErrorMessage + " at GET /Chat/GetMessageCount/";
+                    if (error.response && error.response.data.length !== 0) {
+                        errorMessage = error.response.data;
+                    }
+                    setServerErrorMessages(prev => [...prev, errorMessage]);
+                    console.error(error.toString());
+
+                })
+                .finally(() => setLoading(false));
+
+            // '/Chat/GetMessages', { params: { roomName: _roomName, index: 0, size: displayCnt } }
+            // roomName has a space ' ' instead of '%20'
+            setLoading(true);
+            axios.get(`/Chat/GetMessages?roomName=${_roomName}&skip=0&size=${displayCnt}`)
+                .then(response => response.data)
+                .then(list => {
+                    dispatch({ type: 'SET_COUNT', payload: { currentCount: list.length } });
+                    console.log('Messages received on start: ');
+                    console.log(list);
+                    updateMessages(list, true);
+                })
+                .catch(error => {
+                    setServerError(true);
+                    let errorMessage = defaultErrorMessage + " at GET /Chat/GetMessages";
+                    if (error.response && error.response.data.length !== 0) {
+                        errorMessage = error.response.data;
+                    }
+                    setServerErrorMessages(prev => [...prev, errorMessage]);
+                    console.error(error.toString());
+                })
+                .finally(() => setLoading(false));
+        });
 
     }, []);
 
@@ -258,29 +237,34 @@ function Messages({ displayCnt, updateMessages, messages }) {
                 return;
             dispatch({ type: 'UPDATE_FETCHING', payload: { isFetching: true } });
             const index = Math.ceil(state.currentCount / displayCnt) + 1;
-            const url = '/Chat/GetMessages';
-            axios.get(url, {
-                params: {
-                    roomName: _roomName,
-                    skip: messages.length,
-                    size: displayCnt
-                }
-            })
-                .then(response => response.data)
-                .then(list => {
-                    dispatch({ type: 'UPDATE_FETCHING', payload: { isFetching: false } });
-                    dispatch({ type: 'UPDATE_COUNT', payload: { increase: displayCnt } });
-                    updateMessages(list, false);
-                })
-                .catch(error => {
-                    let errorMessage = defaultErrorMessage;
-                    setServerError(true);
-                    if (error.response && error.response.data.length !== 0) {
-                        errorMessage = error.response.data;
+
+            import('axios').then(({ default: axios }) => {
+                const url = '/Chat/GetMessages';
+
+                axios.get(url, {
+                    params: {
+                        roomName: _roomName,
+                        skip: messages.length,
+                        size: displayCnt
                     }
-                    setServerErrorMessages(prev => [...prev, errormessage])
-                    console.error(error.toString())
-                });
+                })
+                    .then(response => response.data)
+                    .then(list => {
+                        console.log('List received from axios.get call <');
+                        dispatch({ type: 'UPDATE_FETCHING', payload: { isFetching: false } });
+                        dispatch({ type: 'UPDATE_COUNT', payload: { increase: displayCnt } });
+                        updateMessages(list, false);
+                    })
+                    .catch(error => {
+                        let errorMessage = defaultErrorMessage + " at GET /Chat/GetMessages";
+                        setServerError(true);
+                        if (error.response && error.response.data.length !== 0) {
+                            errorMessage = error.response.data;
+                        }
+                        setServerErrorMessages(prev => [...prev, errorMessage])
+                        console.error(error.toString())
+                    });
+            });
         }
     }
 
@@ -316,18 +300,22 @@ function Messages({ displayCnt, updateMessages, messages }) {
                     </div> : null
             }
             {
+                loading ? <div>Loading...</div> :
                 messages.map(message => {
                     const color = message.sender === 'John Cena' ? '#d15d30' : (message.sender === _user ? '#e053b3' : '#159ea5');
                     let id = message.id;
-                    const display_time = moment(message.sendTime).format('Do MMM hh:mm');
+                    //const display_time = moment(message.sendTime).format('Do MMM hh:mm');
+                    let display_time = '';
 
+                    //display_time = moment(message.sendTime).format('Do MMM HH:mm');
+                    display_time = DateTime.fromISO(message.sendTime).toFormat('d MMM HH:mm');
 
                     if (id == undefined || id == null || id == 0) {
                         id = message.sendTime + '_' + message.sender;
                     }
 
                     return (
-                        <Message 
+                        <Message
                             key={id}
                             //sendTime={formatDate(message.sendTime, isFullDate)}
                             sendTime={display_time}
@@ -438,54 +426,64 @@ function Page({ displayName }) {
 
     const handleSubmit = text => {
         const data = { text, roomName: _roomName };
-        const url = '/Chat/SendMessage';
 
         if (text === undefined || text === null || text.length === 0)
             return;
 
-        setLoading(true);
+        import('axios').then(({ default: axios }) => {
+            setLoading(true);
+            const url = '/Chat/SendMessage';
 
-        axios.post(url, null, { params: { text, roomName: _roomName } })
-            .then(response => response.data)
-            .then(data => {
-                console.log('Received model from ChatController')
-                console.log(data);
-                state.connection.invoke('SendMessageToGroup', _roomName, data.message);
-                state.connection.invoke('SendNotificationToGroup', _roomName, data.notification);
-            })
-            .catch(error => {
-                let errorMessage = defaultErrorMessage;
-                setServerError(true);
-                if (error.response && error.response.data.length !== 0) {
-                    errorMessage = error.response.data;
-                }
-                setServerErrorMessages(prev => [...prev, errorMessage]);
-                console.error(error.toString());
-            })
-            .finally(() => setLoading(false));
+            axios.post(url, null, { params: { text, roomName: _roomName } })
+                .then(response => response.data)
+                .then(data => {
+                    console.log('Received model from ChatController')
+                    console.log(data);
+                    state.connection.invoke('SendMessageToGroup', _roomName, data.message);
+                    state.connection.invoke('SendNotificationToGroup', _roomName, data.notification);
+                })
+                .catch(error => {
+                    console.log('An error has occurred!');
+                    let errorMessage = defaultErrorMessage;
+                    setServerError(true);
+                    if (error.response && error.response.data.length !== 0) {
+                        errorMessage = error.response.data;
+                    }
+                    setServerErrorMessages(prev => [...prev, errorMessage]);
+                    console.error(error.toString());
+                })
+                .finally(() => setLoading(false));
+        });
     }
 
     useEffect(() => {
         const connection = new signalR.HubConnectionBuilder()
             .withUrl('/messages')
+            .withAutomaticReconnect()
+            .configureLogging(signalR.LogLevel.Debug)
             .build();
 
         dispatch({ type: 'UPDATE_CONNECTION', payload: { connection } });
     }, []);
 
     useEffect(() => {
-        if (state.connection == null)
+        if (!state.connection)
             return;
 
         state.connection.start()
-            .then(() => state.connection.invoke('JoinGroup', _roomName))
+            .then(() => {
+                console.log('connection started.');
+                console.log('joining group.');
+                state.connection.invoke('JoinGroup', _roomName);
+            })
             .then(() => {
                 const message = { text: `User ${_user} connected.`, sender: 'John Cena', sendTime: new Date() };
                 console.log(message);
                 state.connection.invoke('SendMessageToGroup', _roomName, message);
             })
             .catch(error => {
-                let errorMessage = defaultErrorMessage;
+                let errorMessage = defaultErrorMessage + " at connection start";
+                console.error(error.toString());
                 setServerError(true);
                 if (error.response && error.response.data.length !== 0) {
                     errorMessage = error.response.data;

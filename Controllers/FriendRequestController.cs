@@ -50,10 +50,6 @@ namespace ChatDemoSignalR.Controllers
 
         public async Task<IActionResult> GetPending()
         {
-            Random rng = new Random();
-            int tmp = rng.Next();
-            if (tmp % 2 == 0)
-                return BadRequest("error message error message");
             User user = await _userManager.GetUserAsync(User);
             if (user == null)
                 return BadRequest("User must be logged in!");

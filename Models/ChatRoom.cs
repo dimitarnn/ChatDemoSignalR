@@ -34,7 +34,6 @@ namespace ChatDemoSignalR.Models
 
         public string CreatorName { get; set; }
 
-        [MaxLength(100)]
         public string Description { get; set; }
 
         public ICollection<JoinRoomRequest> JoinRoomRequests { get; set; }

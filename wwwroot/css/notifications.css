@@ -58,6 +58,11 @@
     color: #fff;
 }
 
+.notification.read:hover {
+    background: #333;
+    color: #fff;
+}
+
 #notification-image {
     width: 100%;
     height: 100%;

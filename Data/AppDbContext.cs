@@ -26,6 +26,10 @@ namespace ChatDemoSignalR.Data
 
         public DbSet<JoinRoomRequest> JoinRoomRequests { get; set; }
 
+        public DbSet<Image> Images { get; set; }
+
+        public DbSet<LogEvent> LogEvents { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);

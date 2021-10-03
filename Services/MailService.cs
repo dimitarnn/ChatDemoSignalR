@@ -2,6 +2,7 @@
 using ChatDemoSignalR.Settings;
 using MailKit.Net.Smtp;
 using MailKit.Security;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using MimeKit;
@@ -11,14 +12,18 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
+
 namespace ChatDemoSignalR.Services
 {
     public class MailService : IMailService
     {
         private MailSettings _mailSettings;
-        public MailService(IOptions<MailSettings> mailSettings)
+        private readonly IWebHostEnvironment _hostEnvironment;
+        public MailService(IOptions<MailSettings> mailSettings,
+                           IWebHostEnvironment hostEnvironment)
         {
             _mailSettings = mailSettings.Value;
+            _hostEnvironment = hostEnvironment;
         }
         
         public async Task SendEmail(MailRequest mailRequest)
@@ -57,21 +62,23 @@ namespace ChatDemoSignalR.Services
 
         public async Task SendConfirmationEmail(ConfirmationEmail request, string link)
         {
-            string filePath = Directory.GetCurrentDirectory() + "\\Templates\\ConfirmationEmailTemplate.html";
-            StreamReader reader = new StreamReader(filePath);
+            //string filePath = Directory.GetCurrentDirectory() + "\\Templates\\ConfirmationEmailTemplate.html";
+            string wwwRootPath = _hostEnvironment.WebRootPath;
+            string path = wwwRootPath + "/templates/ConfirmationEmailTemplate.html";
+            StreamReader reader = new StreamReader(path);
             string mailText = reader.ReadToEnd();
             reader.Close();
-
             mailText = mailText
                 .Replace("[username]", request.UserName)
                 .Replace("[email]", request.ToEmail)
                 .Replace("[link]", link);
 
+            // check html
+
             var email = new MimeMessage();
             email.Sender = MailboxAddress.Parse(_mailSettings.Mail);
             email.To.Add(MailboxAddress.Parse(request.ToEmail));
             email.Subject = $"Email verification for {request.ToEmail}";
-
             var builder = new BodyBuilder();
             builder.HtmlBody = mailText;
             email.Body = builder.ToMessageBody();

@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using ChatDemoSignalR.Models;
 using ChatDemoSignalR.Repository;
 using ChatDemoSignalR.ViewModels;
+using FluentValidation;
+using FluentValidation.Results;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -15,11 +17,15 @@ namespace ChatDemoSignalR.Controllers
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<User> _userManager;
+        private readonly IValidator<User> _userValidator;
 
-        public UserController(IUnitOfWork unitOfWork, UserManager<User> userManager)
+        public UserController(IUnitOfWork unitOfWork,
+                              UserManager<User> userManager,
+                              IValidator<User> userValidator)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
+            _userValidator = userValidator;
         }
 
         [HttpGet]
@@ -74,14 +80,39 @@ namespace ChatDemoSignalR.Controllers
             if (friendId == userId)
                 return BadRequest("Must select a different user!");
 
-            int userFriendsCount = await _unitOfWork.Users.UserFriendsCount(user.Id);
-            int friendFriendsCount = await _unitOfWork.Users.UserFriendsCount(friend.Id);
+            ValidationResult result = await _userValidator.ValidateAsync(user, options => options.IncludeRuleSets("FriendsLimit"));
+            List<string> errors = new List<string>();
 
-            if (userFriendsCount >= user.FriendsLimit)
-                return BadRequest("User cannot add more friends!");
+            if (!result.IsValid)
+            {
+                foreach (var error in result.Errors)
+                {
+                    errors.Add(error.ErrorMessage);
+                }
 
-            if (friendFriendsCount >= friend.FriendsLimit)
-                return BadRequest("User cannot accept more requests!");
+                return BadRequest(errors);
+            }
+
+            result = await _userValidator.ValidateAsync(friend, options => options.IncludeRuleSets("FriendsLimit"));
+
+            if (!result.IsValid)
+            {
+                foreach (var error in result.Errors)
+                {
+                    errors.Add(error.ErrorMessage);
+                }
+
+                return BadRequest(errors);
+            }
+
+            //int userFriendsCount = await _unitOfWork.Users.UserFriendsCount(user.Id);
+            //int friendFriendsCount = await _unitOfWork.Users.UserFriendsCount(friend.Id);
+
+            //if (userFriendsCount >= user.FriendsLimit)
+            //    return BadRequest("User cannot add more friends!");
+
+            //if (friendFriendsCount >= friend.FriendsLimit)
+            //    return BadRequest("User cannot accept more requests!");
 
             UserFriends friends1 = new UserFriends
             {

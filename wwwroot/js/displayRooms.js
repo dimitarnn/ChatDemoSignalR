@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
-import $ from 'jquery';
-import axios from 'axios';
+//import $ from 'jquery';
+//import axios from 'axios';
 //import ChatRoom from './ChatRoom';
 import Pagination from './Pagination';
 import PaginationInput from './PaginationInput';
@@ -20,26 +20,29 @@ function Input({ addRoom }) {
     const [success, setSuccess] = useState(false);
     const [serverError, setServerError] = useState(false);
     const [serverErrorMessages, setServerErrorMessages] = useState([]);
+    const [show, setShow] = useState(false);
 
     useEffect(() => {
         const url = '/Chat/GetChatTypes';
-        setLoading(true);
-        axios.get(url)
-            .then(response => response.data)
-            .then(list => {
-                setChatTypes(list);
-                console.log(list);
-            })
-            .catch(error => {
-                setServerError(true);
-                let errorMessage = defaultErrorMessage;
-                if (error.response && error.response.data.length !== 0) {
-                    errorMessage = error.response.data;
-                }
-                setServerErrorMessages(prev => [...prev, errorMessage]);
-                console.error(error.toString())
-            })
-            .finally(() => setLoading(false));
+        import('axios').then(({ default: axios }) => {
+            setLoading(true);
+            axios.get(url)
+                .then(response => response.data)
+                .then(list => {
+                    setChatTypes(list);
+                    console.log(list);
+                })
+                .catch(error => {
+                    setServerError(true);
+                    let errorMessage = defaultErrorMessage;
+                    if (error.response && error.response.data.length !== 0) {
+                        errorMessage = error.response.data;
+                    }
+                    setServerErrorMessages(prev => [...prev, errorMessage]);
+                    console.error(error.toString())
+                })
+                .finally(() => setLoading(false));
+        });
     }, []);
 
     const validate = () => {
@@ -51,12 +54,21 @@ function Input({ addRoom }) {
             errors.roomName = 'Room name must be at least 2 characters long!';
         }
 
+        if (description.length > 100) {
+            errors.description = 'Description cannot exceed 100 characters!';
+        }
+
         // description may be blank
         return errors;
     }
 
     const handleClick = e => {
         e.preventDefault();
+
+        console.log('submitting...');
+        console.log(roomName);
+        console.log(description);
+        console.log(chatType);
 
         const errorsObj = validate();
         setErrors(errorsObj);
@@ -72,26 +84,35 @@ function Input({ addRoom }) {
         const data = { roomName: roomName, description: description, chatType: chatType };
         //console.log(data);
 
-        axios.post(url, null, { params: data })
-            .then(response => {
-                return response.data
-            })
-            .then(newRoom => {
-                console.log(newRoom);
-                addRoom(newRoom);
-                setRoomName('');
-                setDescription('');
-                console.log('** room created');
-            })
-            .catch(error => {
-                setServerError(true);
-                let errorMessage = defaultErrorMessage;
-                if (error.response && error.response.data.length !== 0) {
-                    errorMessage = error.response.data;
-                }
-                setServerErrorMessages(prev => [...prev, errorMessage]);
-                console.error(error);
-            })
+        setServerError(false);
+        setServerErrorMessages([]);
+
+        import('axios').then(({ default: axios }) => {
+            axios.post(url, null, { params: data })
+                .then(response => {
+                    return response.data
+                })
+                .then(newRoom => {
+                    //console.log(newRoom);
+                    addRoom(newRoom);
+                    setRoomName('');
+                    setDescription('');
+                    //console.log('** room created');
+                })
+                .catch(error => {
+                    setServerError(true);
+                    let errorMessage = defaultErrorMessage;
+                    if (error.response && error.response.data.length !== 0) {
+                        let serverErrors = error.response.data;
+                        setServerErrorMessages(prev => [...prev, ...serverErrors]);
+                    }
+                    else {
+                        setServerErrorMessages(prev => [...prev, errorMessage]);
+                    }
+
+                    console.error(error);
+                })
+        });
     }
 
     const handleChange = e => {
@@ -100,54 +121,71 @@ function Input({ addRoom }) {
         let allErrors = errors;
         delete allErrors[roomName];
         setErrors(allErrors);
+
+        setSuccess(false);
+        setServerError(false);
+        setServerErrorMessages([]);
+        
     }
 
-    if (serverError) {
-        return (
-            <div className='center-div'>
-                {
-                    serverErrorMessages.map((error, step) => <Alert key={step} type='error' message={error} />)
-                }
-                <Alert type='error' message='Please reload the page and try again!' />
-            </div>
-        );
+    const onClick = () => {
+        setShow(prev => !prev);
     }
 
     return (
         <div id="form-container">
-            <div id="create-room-form">
-                <h2>Create a new room!</h2>
-                <div>
-                    {
-                        (success && !serverError) && (<Alert type='success' message='Successfully submited!'/>)
-                    }
-                    <input
-                        name="roomName"
-                        type="text"
-                        placeholder="Your room"
-                        value={roomName}
-                        onChange={handleChange}
-                        autoComplete="off"
-                    />
-                    { errors?.roomName && <Alert type='error' message={errors.roomName} /> }
-                    <input
-                        name="description"
-                        type="text"
-                        placeholder="Description"
-                        value={description}
-                        onChange={e => { setDescription(e.target.value) }}
-                        autoComplete="off"
-                    />
-                    <select value={chatType} onChange={e => setChatType(e.target.value)}>
-                        {
-                            chatTypes.map(chatType => {
-                                return chatType != 'Private' ? <option key={chatType} value={chatType}>{chatType}</option> : null
-                            })
-                        }
-                    </select>
-                    <button id="create-room-button" type="submit" onClick={handleClick}>Submit</button>
-                </div>
+            <input type='checkbox' id='create-room-checkbox' className='create-room-checkbox' />
+            <div id='create-room-trigger' className='center-div create-room-trigger'>
+                <label htmlFor='create-room-checkbox' className='form-button' onClick={onClick}>Create a new room!</label>
             </div>
+            {
+                show ?
+                    <div id="create-room-form" className='create-room-form'>
+                        
+                        <h2>Create a new room!</h2>
+                        {
+                            serverError ?
+                                <div>
+                                    {
+                                        serverErrorMessages.map((error, step) => <Alert key={step} type='error' message={error} />)
+                                    }
+                                </div> :
+                                null
+                        }
+                        <div>
+                            {
+                                (success && !serverError) && (<Alert type='success' message='Successfully submited!' />)
+                            }
+                            <input
+                                name="roomName"
+                                type="text"
+                                placeholder="Your room"
+                                value={roomName}
+                                onChange={handleChange}
+                                autoComplete="off"
+                            />
+                            {errors?.roomName && <Alert type='error' message={errors.roomName} />}
+                            <input
+                                name="description"
+                                type="text"
+                                placeholder="Description"
+                                value={description}
+                                onChange={e => { setDescription(e.target.value) }}
+                                autoComplete="off"
+                            />
+                            {errors?.description && <Alert type='error' message={errors.description} />}
+                            <select value={chatType} onChange={e => setChatType(e.target.value)}>
+                                {
+                                    chatTypes.map(chatType => {
+                                        return chatType != 'Private' ? <option key={chatType} value={chatType}>{chatType}</option> : null
+                                    })
+                                }
+                            </select>
+                            <button id="create-room-button" type="submit" onClick={handleClick}>Submit</button>
+                        </div>
+                    </div> :
+                    null
+            }
         </div>
     )
 }
@@ -186,40 +224,43 @@ function ChatRoomsContainer() {
         const url = '/Chat/GetPublicRooms';
         const getChatTypesUrl = '/Chat/GetChatTypes';
         console.log('Fetching Rooms from database');
-        setLoading(true);
+        
+        import('axios').then(({ default: axios }) => {
+            setLoading(true);
 
-        axios(url)
-            .then(response => {
-                return response.data;
-            })
-            .then(data => {
-                setRooms(data);
-            })
-            .catch(error => {
-                setServerError(true);
-                let errorMessage = defaultErrorMessage;
-                if (error.response && error.response.data.length !== 0) {
-                    errorMessage = error.response.data;
-                }
-                setServerErrorMessages(prev => [...prev, errorMessage]);
-                console.log(error);
-            })
-            .finally(() => setLoading(false));
+            axios(url)
+                .then(response => {
+                    return response.data;
+                })
+                .then(data => {
+                    setRooms(data);
+                })
+                .catch(error => {
+                    setServerError(true);
+                    let errorMessage = defaultErrorMessage;
+                    if (error.response && error.response.data.length !== 0) {
+                        errorMessage = error.response.data;
+                    }
+                    setServerErrorMessages(prev => [...prev, errorMessage]);
+                    console.log(error);
+                })
+                .finally(() => setLoading(false));
 
-        setLoading(true);
-        axios.get(getChatTypesUrl)
-            .then(response => response.data)
-            .then(list => setChatTypes(list))
-            .catch(error => {
-                setServerError(true);
-                let errorMessage = defaultErrorMessage;
-                if (error.response && error.response.data.length !== 0) {
-                    errorMessage = error.response.data;
-                }
-                setServerErrorMessages(prev => [...prev, errorMessage]);
-                console.error(error.toString());
-            })
-            .finally(() => setLoading(false));
+            setLoading(true);
+            axios.get(getChatTypesUrl)
+                .then(response => response.data)
+                .then(list => setChatTypes(list))
+                .catch(error => {
+                    setServerError(true);
+                    let errorMessage = defaultErrorMessage;
+                    if (error.response && error.response.data.length !== 0) {
+                        errorMessage = error.response.data;
+                    }
+                    setServerErrorMessages(prev => [...prev, errorMessage]);
+                    console.error(error.toString());
+                })
+                .finally(() => setLoading(false));
+        });
 
     }, []);
 
@@ -286,7 +327,13 @@ function ChatRoomsContainer() {
         <div id="contents">
             <div id='previous-page-mobile' onClick={previousPage}><span>&#8249;</span></div>
             <div id='next-page-mobile' onClick={nextPage}><span>&#8250;</span></div>
-            <Input addRoom={addRoom} />
+            {
+                _isLoggedIn ?
+                    <Input addRoom={addRoom} /> :
+                    <div className='center-div'>
+                        <a href='/Account/Login' className='form-button'>Sign in to add rooms!</a>
+                    </div>
+            }
             {
                 serverError ?
                     <div>

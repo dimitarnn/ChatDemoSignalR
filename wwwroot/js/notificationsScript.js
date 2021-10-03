@@ -2,53 +2,11 @@
 import ReactDOM from 'react-dom';
 import $ from 'jquery';
 import * as signalR from '@microsoft/signalr';
-import axios from 'axios';
+//import axios from 'axios';
+import Notification from './Notification';
 
 
 var target = document.getElementById('notifications');
-
-function Notification({ notification, text, isRead, id }) {
-    const classes = 'notification' + (isRead ? ' read' : '');
-    const [display, setDisplay] = useState(false);
-    const [read, setRead] = useState(isRead);
-
-    const handleClick = e => {
-        setDisplay(display => !display);
-    };
-
-    const handleNotificationClick = () => {
-        console.log('notification: ');
-        console.log(notification);
-        let url = `/Notification/Read`;
-        if (read)
-            url = `/Notification/Unread`;
-
-        axios.post(url, null, {
-            params: {
-                creationTime: notification.creationTime,
-                text: notification.text,
-                userId: notification.userId
-            }
-        })
-            .then(() => {
-                setRead(read => !read);
-            })
-            .catch(error => console.error(error.toString()));
-    }
-
-    return (
-        <div>
-        <div onClick={handleClick} className={(read ? 'notification read' : 'notification')}>
-                <span>{text}</span>
-                <div style={{ display: (display ? 'flex' : 'none') }} className='notification-links' >
-                    <a onClick={handleNotificationClick}>Mark as read</a>
-                    <a href={notification.source}>Open</a>
-                </div>
-            </div>
-            
-        </div>
-    );
-}
 
 const initialState = { notifications: [], total: 0, currentCount: 0, isFetching: false };
 
@@ -74,6 +32,7 @@ function reducer(state, action) {
 function NotificationsContainer({ displayCnt }) {
     const [connection, setConnection] = useState(null);
     const [state, dispatch] = useReducer(reducer, initialState);
+    const [loading, setLoading] = useState(false);
 
     const loadOnScroll = () => {
         if (state.notifications.length >= state.total)
@@ -91,6 +50,66 @@ function NotificationsContainer({ displayCnt }) {
             const index = Math.ceil(state.currentCount / displayCnt) + 1;
             const url = '/Notification/LoadNotifications';
 
+            console.log('importing axios...');
+            import('axios').then(({ default: axios }) => {
+                setLoading(true);
+                axios.get(url, {
+                    params: {
+                        skip: state.notifications.length,
+                        size: displayCnt
+                    }
+                })
+                    .then(response => response.data)
+                    .then(list => {
+                        dispatch({ type: 'UPDATE_COUNT', payload: { increase: list.length } });
+                        dispatch({ type: 'UPDATE_NOTIFICATIONS', payload: { list } });
+                        dispatch({ type: 'UPDATE_FETCHING', payload: { isFetching: false } });
+                    })
+                    .catch(error => {
+                        console.log('An error occurred at: axios.get("/Notifications/GetNotifications")');
+                        console.error(error.toString());
+
+                    })
+                    .finally(() => setLoading(false));
+            });
+
+        }
+    }
+
+    useEffect(() => {
+        // creating signalR connection
+        try {
+            const newConnection = new signalR.HubConnectionBuilder()
+                .withUrl('/messages')
+                .configureLogging(signalR.LogLevel.Debug)
+                .build();
+
+            setConnection(newConnection);
+        } catch (error) {
+            console.log('An error occurred at: signalR.HubConnectionBuilder().build()');
+            console.error(error.toString());
+        } finally {
+            console.log('connection built.');
+        }
+        
+
+        // loading notifications
+        import('axios').then(({ default: axios }) => {
+            const getCountUrl = '/Notification/GetNotificationsCount';
+            axios.get(getCountUrl)
+                .then(response => response.data)
+                .then(count => {
+                    console.log('user notifications count:');
+                    console.log(count);
+                    dispatch({ type: 'UPDATE_TOTAL', payload: { total: count } });
+                })
+                .catch(error => {
+                    console.log('An error occurred at: axios.get("/Notification/GetNotificationsCount")');
+                    console.error(error.toString());
+                });
+
+            const index = Math.ceil(state.currentCount / displayCnt) + 1;
+            const url = '/Notification/LoadNotifications'
             axios.get(url, {
                 params: {
                     skip: state.notifications.length,
@@ -99,55 +118,20 @@ function NotificationsContainer({ displayCnt }) {
             })
                 .then(response => response.data)
                 .then(list => {
-                    dispatch({ type: 'UPDATE_COUNT', payload: { increase: list.length } });
-                    dispatch({ type: 'UPDATE_NOTIFICATIONS', payload: { list } });
-                    dispatch({ type: 'UPDATE_FETCHING', payload: { isFetching: false } });
+                    //console.log(list);
+                    dispatch({ type: 'UPDATE_COUNT', payload: { increase: displayCnt } });
+                    dispatch({ type: 'UPDATE_NOTIFICATIONS', payload: { list } })
                 })
-                .catch(error => console.error(error.toString()));
-                //.finally(() => dispatch({ type: 'UPDATE_FETCHING', payload: { isFetching: false } }));
-        }
-    }
-
-    useEffect(() => {
-        // creating signalR connection
-        const newConnection = new signalR.HubConnectionBuilder()
-            .withUrl('/messages')
-            .build();
-
-        setConnection(newConnection);
-        
-
-        // loading notifications
-        const getCountUrl = '/Notification/GetNotificationsCount';
-        axios.get(getCountUrl)
-            .then(response => response.data)
-            .then(count => {
-                console.log('user notifications count:');
-                console.log(count);
-                dispatch({ type: 'UPDATE_TOTAL', payload: { total: count } });
-            })
-            .catch(error => console.error(error.toString()));
-
-        const index = Math.ceil(state.currentCount / displayCnt) + 1;
-        const url = '/Notification/LoadNotifications'
-        axios.get(url, {
-            params: {
-                skip: state.notifications.length,
-                size: displayCnt
-            }
-        })
-            .then(response => response.data)
-            .then(list => {
-                //console.log(list);
-                dispatch({ type: 'UPDATE_COUNT', payload: { increase: displayCnt } });
-                dispatch({ type: 'UPDATE_NOTIFICATIONS', payload: { list } })
-            })
-            .catch(error => console.error(error.toString()));
+                .catch(error => {
+                    console.log('An error occurred at: axios.get("/Notification/LoadNotifications")');
+                    console.error(error.toString())
+                });
+        });
 
     }, []);
 
     useEffect(() => {
-        if (connection == null)
+        if (!connection)
             return;
 
         console.log('connection did update, connection:');
@@ -157,7 +141,10 @@ function NotificationsContainer({ displayCnt }) {
             .then(() => {
                 console.log('Notification connection established.')
             })
-            .catch(error => console.error(error.toString()));
+            .catch(error => {
+                console.log('An error occurred at: connection.start()');
+                console.error(error.toString());
+            });
 
         connection.on('ReceiveNotification', notification => {
             console.log(' *** received notification *** ');
@@ -185,6 +172,9 @@ function NotificationsContainer({ displayCnt }) {
                         />
                     );
                 })
+            }
+            {
+                loading ? <div>Loading...</div> : null
             }
         </div>
     );

@@ -36,8 +36,7 @@ namespace ChatDemoSignalR.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Description")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("DisplayName")
                         .HasMaxLength(50)
@@ -80,6 +79,40 @@ namespace ChatDemoSignalR.Migrations
                     b.ToTable("FriendRequests");
                 });
 
+            modelBuilder.Entity("ChatDemoSignalR.Models.Image", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .UseIdentityColumn();
+
+                    b.Property<DateTime>("CreationDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatorId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("CreatorName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FileName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Title")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatorId");
+
+                    b.ToTable("Images");
+                });
+
             modelBuilder.Entity("ChatDemoSignalR.Models.JoinRoomRequest", b =>
                 {
                     b.Property<string>("Id")
@@ -114,6 +147,24 @@ namespace ChatDemoSignalR.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("JoinRoomRequests");
+                });
+
+            modelBuilder.Entity("ChatDemoSignalR.Models.LogEvent", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .UseIdentityColumn();
+
+                    b.Property<string>("Message")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("TimeStamp")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("LogEvents");
                 });
 
             modelBuilder.Entity("ChatDemoSignalR.Models.Message", b =>
@@ -431,6 +482,17 @@ namespace ChatDemoSignalR.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("ChatDemoSignalR.Models.Image", b =>
+                {
+                    b.HasOne("ChatDemoSignalR.Models.User", "Creator")
+                        .WithMany("Images")
+                        .HasForeignKey("CreatorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Creator");
+                });
+
             modelBuilder.Entity("ChatDemoSignalR.Models.JoinRoomRequest", b =>
                 {
                     b.HasOne("ChatDemoSignalR.Models.ChatRoom", "ChatRoom")
@@ -567,6 +629,8 @@ namespace ChatDemoSignalR.Migrations
                     b.Navigation("Following");
 
                     b.Navigation("FriendRequests");
+
+                    b.Navigation("Images");
 
                     b.Navigation("JoinRoomRequests");
 

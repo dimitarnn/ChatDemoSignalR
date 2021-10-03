@@ -45,5 +45,7 @@ namespace ChatDemoSignalR.Models
 
         public ICollection<JoinRoomRequest> JoinRoomRequests { get; set; }
 
+        public ICollection<Image> Images { get; set; }
+
     }
 }

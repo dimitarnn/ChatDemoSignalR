@@ -4,11 +4,16 @@
 @model List<ChatRoom>
 
 @*<div class="main-container">*@
-    <h2 class="text-danger">You must join a room in order to receive notifications from that room</h2>
+    <div class="center-div">
+        <h2 class="text-danger">You must join a room in order to receive notifications from that room</h2>
+    </div>
     <div id="root"></div>
 @*</div>*@
 
 @section Scripts
 {
+    <script>
+        const _isLoggedIn = @(_signInManager.IsSignedIn(User) ? "true" : "false");
+    </script>
     <script src="~/js/dist/displayRooms.bundle.js"></script>
 }

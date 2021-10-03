@@ -1,0 +1,31 @@
+﻿.info-container {
+    margin: .5rem;
+    display: flex;
+    flex-direction: column;
+    width: 40rem;
+    height: 10rem;
+    overflow: scroll;
+    box-shadow: .15rem .15rem .15rem #A4A8AB,
+                -.1rem -.1rem .1rem #343C3B;
+}
+
+.info {
+    margin: .3rem 0;
+    width: 100%;
+    padding: .7rem;
+    border-radius: .2rem;
+    box-shadow: .1rem .1rem .1rem #343C3B;
+    background: #1F2024;
+    color: #A4A8AB;
+}
+
+.file-input-form {
+    position: relative;
+    margin: .5rem;
+    width: 20rem;
+    height: 3rem;
+    font-size: 1.2rem;
+    display: grid;
+    align-items: center;
+    justify-content: center;
+}

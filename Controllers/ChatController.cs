@@ -2,18 +2,22 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
 using ChatDemoSignalR.Data;
 using ChatDemoSignalR.Hubs;
 using ChatDemoSignalR.Models;
 using ChatDemoSignalR.Repository;
 using ChatDemoSignalR.ViewModels;
+using FluentValidation;
+using FluentValidation.Results;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 
 namespace ChatDemoSignalR.Controllers
 {
@@ -23,16 +27,22 @@ namespace ChatDemoSignalR.Controllers
         private readonly SignInManager<User> _signInManager;
         private readonly UserManager<User> _userManager;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IValidator<User> _userValidator;
+        private readonly IValidator<ChatRoom> _roomValidator;
 
         public ChatController(IHubContext<MessageHub> chat,
             SignInManager<User> signInManager,
             UserManager<User> userManager,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IValidator<User> userValidator,
+            IValidator<ChatRoom> roomValidator)
         {
             _chat = chat;
             _signInManager = signInManager;
             _userManager = userManager;
             _unitOfWork = unitOfWork;
+            _userValidator = userValidator;
+            _roomValidator = roomValidator;
         }
 
         public string EncryptCeaser(string plaintext, int offset)
@@ -81,6 +91,9 @@ namespace ChatDemoSignalR.Controllers
 
         public async Task<IActionResult> DisplayRooms()
         {
+            User user = await _userManager.GetUserAsync(User);
+            string currentUser = (user == null ? "Anonymous" : user.UserName);
+            Log.Information("[CUSTOM] User {User} visited /Chat/DisplayRooms at {Now} Thread {Thread}", currentUser, DateTime.Now, Thread.CurrentThread.ManagedThreadId);
             List<ChatRoom> rooms = (await _unitOfWork.ChatRooms.GetAllChatRooms()).ToList();
             return View(rooms);
         }
@@ -186,44 +199,78 @@ namespace ChatDemoSignalR.Controllers
 
         //[Authorize]
         [HttpPost]
-        public async Task<IActionResult> AddChatRoom(string roomName, string description, ChatType chatType)
+        public async Task<IActionResult> AddChatRoom(ChatRoom room)//(string roomName, string description, ChatType chatType)
         {
             User user = await _userManager.GetUserAsync(User);
 
             if (user == null)
                 return BadRequest("User must be logged in!");
 
-            if (roomName == null || roomName.Length == 0)
-                return BadRequest("Ivalid room name!");
+            Log.Information("[CUSTOM] User {User} submits room {@ChatRoom}", user.UserName, room);
 
-            int userRoomsCnt = await _unitOfWork.ChatRooms.UserRoomsCount(user.Id);
-            if (userRoomsCnt >= user.RoomsLimit)
-                return BadRequest("User cannot add any more rooms!");
+            List<string> errors = new List<string>();
 
-            bool isCreated = await _unitOfWork.ChatRooms.ContainsRoom(roomName);
-            if (isCreated)
-                return BadRequest("Room name must be unique!");
+            ValidationResult result = _roomValidator.Validate(room);
 
-            if (description == null)
-                description = "No description";
+            if (!result.IsValid)
+            {
+                foreach (var error in result.Errors)
+                {
+                    errors.Add(error.ErrorMessage);
+                }
 
-            if (description.Length == 0)
-                description = "No description";
+                return BadRequest(errors);
+            }
+
+            result = await _userValidator.ValidateAsync(user, options => options.IncludeRuleSets("RoomsLimit"));
+
+            if (!result.IsValid)
+            {
+                foreach (var error in result.Errors)
+                {
+                    errors.Add(error.ErrorMessage);
+                }
+
+                return BadRequest(errors);
+            }
+
+            //bool isCreated = await _unitOfWork.ChatRooms.ContainsRoom(room.RoomName);
+            //if (isCreated)
+            //    return BadRequest("Room name must be unique!");
+
+            result = await _roomValidator.ValidateAsync(room, options => options.IncludeRuleSets("AlreadyCreated"));
+            if (!result.IsValid)
+            {
+                foreach (var error in result.Errors)
+                {
+                    errors.Add(error.ErrorMessage);
+                }
+
+                return BadRequest(errors);
+            }
+
+            if (room.Description == null)
+                room.Description = "No description";
+
+            if (room.Description.Length == 0)
+                room.Description = "No description";
 
             ChatRoom chatRoom = new ChatRoom
             {
-                RoomName = roomName,
-                ChatType = chatType,
-                DisplayName = roomName,
-                Description = description,
+                RoomName = room.RoomName,
+                ChatType = room.ChatType,
+                DisplayName = room.RoomName,
+                Description = room.Description,
                 CreatorId = user.Id,
                 CreatorName = user.UserName
             };
 
             chatRoom.Users.Add(user); // add the creator user
 
+            Log.Information("[CUSTOM] Adding room {ChatRoom} to the database at {Now}", room.RoomName, DateTime.Now);
             _unitOfWork.ChatRooms.Add(chatRoom);
             await _unitOfWork.Complete();
+            Log.Information("[CUSTOM] Room {ChatRoom} added to the database at {Now}", room.RoomName, DateTime.Now);
 
             //ChatRoom response = await _unitOfWork.ChatRooms.GetByName(roomName);  // get the room without the other connected models
             // to avaoid loops and error 500 
@@ -232,14 +279,15 @@ namespace ChatDemoSignalR.Controllers
             ChatRoom response = new ChatRoom
             {
                 Id = chatRoom.Id,
-                RoomName = roomName,
-                ChatType = chatType,
-                DisplayName = roomName,
-                Description = description,
+                RoomName = room.RoomName,
+                ChatType = room.ChatType,
+                DisplayName = room.RoomName,
+                Description = room.Description,
                 CreatorId = user.Id,
                 CreatorName = user.UserName
             };
 
+            Log.Information("[CUSTOM] Room {@ChatRoom} added successfully by user {User}", response, user.UserName);
             return Ok(response);
         }
 
@@ -288,6 +336,7 @@ namespace ChatDemoSignalR.Controllers
             return Ok(message);
         }
 
+        [HttpPost]
         public async Task<IActionResult> SendMessage(string text, string roomName)
         {
             var userName = User.Identity.Name;
@@ -300,14 +349,23 @@ namespace ChatDemoSignalR.Controllers
                 sender = user.UserName;
             }
 
+            Log.Information("[CUSTOM] User {User} attempts to send message {Message} to room {ChatRoom} Thread {Thread}",
+                sender, text, roomName, Thread.CurrentThread.ManagedThreadId);
+
             /// encrypt message
             //text = EncryptCeaser(text, 1);
 
-            var message = new Message { Text = text, Sender = sender, SendTime = DateTime.Now };
             ChatRoom chatRoom = await _unitOfWork.ChatRooms.GetRoomWithUsers(roomName);
 
             if (chatRoom == null)
                 return BadRequest("Invalid room name!");
+
+            var message = new Message
+            {
+                Text = text,
+                Sender = sender,
+                SendTime = DateTime.Now
+            };
 
             if (chatRoom.ChatType == ChatType.Ephemeral)
                 return Ok(new MessageNotificationVM { Message = message, Notification = null });
@@ -318,7 +376,9 @@ namespace ChatDemoSignalR.Controllers
                 chatRoom.Messages = new List<Message>();
             }
 
+            Log.Information("[CUSTOM] Adding message {Message} to the database at {Now}", message.Text, DateTime.Now);
             chatRoom.Messages.Add(message);
+            Log.Information("[CUSTOM] Message {Message} added to the database at {Now}", message.Text, DateTime.Now);
 
             // notification
             Notification notification;
@@ -372,6 +432,7 @@ namespace ChatDemoSignalR.Controllers
                 Notification = notification
             };
 
+            Log.Information("[CUSTOM] User {User} successfully sent message {Message} to room {ChatRoom}", sender, text, roomName);
             return Ok(model);
         }
         
@@ -417,6 +478,7 @@ namespace ChatDemoSignalR.Controllers
         public async Task<IActionResult> GetMessages(string roomName, int skip, int size)
         {
             ChatRoom chatRoom = await _unitOfWork.ChatRooms.GetByName(roomName);
+            Log.Information("[CUSTOM] User requested all messages in room {Room} with skip {Skip} size {Size}", roomName, skip, size);
 
             if (chatRoom == null)
             {
@@ -431,6 +493,7 @@ namespace ChatDemoSignalR.Controllers
         public async Task<IActionResult> GetMessageCount(string roomName)
         {
             ChatRoom chatRoom = await _unitOfWork.ChatRooms.GetByName(roomName);
+            Log.Information("[CUSTOM] User requests Message Count in room {Room}", roomName);
 
             if (chatRoom == null)
             {
@@ -448,6 +511,8 @@ namespace ChatDemoSignalR.Controllers
             var user = await _userManager.GetUserAsync(User);
             ChatRoom chatRoom = await _unitOfWork.ChatRooms.GetRoomWithUsers(roomName);
 
+            Log.Information("[CUSTOM] User {User} attempts to join room {ChatRoom}", user.UserName, roomName);
+
             if (chatRoom == null)
                 return BadRequest("Invalid room name!");
 
@@ -457,6 +522,7 @@ namespace ChatDemoSignalR.Controllers
                 await _unitOfWork.Complete();
             }
 
+            Log.Information("[CUSTOM] User {User} successfully joined room {ChatRoom}", user.UserName, roomName);
             return Ok();
         }
 
