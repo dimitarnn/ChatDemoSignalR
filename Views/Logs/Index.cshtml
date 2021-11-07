@@ -1,0 +1,16 @@
+﻿@model List<LogEvent>
+
+<h1>Logs since last Application start</h1>
+
+<table>
+    @foreach (LogEvent log in Model)
+    {
+        <tr>
+            <td>@log.Id</td>
+            <td>@log.Message</td>
+            <td>@log.Level</td>
+            <td>@log.TimeStamp</td>
+            <td>@log.Exception</td>
+        </tr>
+    }
+</table>

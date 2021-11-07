@@ -51,7 +51,7 @@ namespace ChatDemoSignalR.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Login(string username, string password)
+        public async Task<IActionResult> Login(string username, string password, string returnUrl)
         {
             var user = await _userManager.FindByNameAsync(username);
             List<string> errors = new List<string>();
@@ -62,6 +62,11 @@ namespace ChatDemoSignalR.Controllers
 
                 if (result.Succeeded)
                 {
+                    if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                    {
+                        return Ok(returnUrl);
+                        //return Redirect(returnUrl);
+                    }
                     return Ok();
                     //return RedirectToAction("Index", "Home");
                 }

@@ -94,6 +94,7 @@
 }
 
 .form-button {
+    display: block; /* ? */
     width: 20rem;
     padding: 1rem;
     margin: 0.5rem 1.2rem;
@@ -109,6 +110,10 @@
         background: linear-gradient(to right, var(--color1), #08d);
     }
 
+.form-button.inline-button {
+    display: inline-block;
+}
+
 .link {
     display: block;
     margin: 1rem;
@@ -117,6 +122,6 @@
     text-align: center;
 }
 
-h2.register {
+.title {
     text-align: center;
 }

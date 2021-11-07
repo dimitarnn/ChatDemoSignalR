@@ -1,0 +1,11 @@
+﻿@model UserVM
+
+<div id="root"></div>
+
+@section Scripts
+{
+    <script>
+        var _id = @Html.Raw(Json.Serialize(Model.Id));
+    </script>
+    <script src="~/js/dist/editUser.bundle.js"></script>
+}

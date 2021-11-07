@@ -109,7 +109,7 @@ nav {
     background: var(--background);
     width: 100%;
     transform: scale(1, 0);
-    transform-origin: top;
+    /*transform-origin: top;*/
     transition: transform 400ms ease-in-out;
 }
 

@@ -56,6 +56,11 @@ namespace ChatDemoSignalR.Data
                 .WithMany(u => u.Following)
                 .HasForeignKey(uf => uf.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            foreach (var foreignKey in builder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))
+            {
+                foreignKey.DeleteBehavior = DeleteBehavior.Restrict;
+            }
         }
     }
 }

@@ -71,13 +71,15 @@ function NotificationsContainer({ displayCnt }) {
 
                     })
                     .finally(() => setLoading(false));
-            });
+            })
+                .catch(error => console.error(error.toString()));
 
         }
     }
 
     useEffect(() => {
         // creating signalR connection
+
         try {
             const newConnection = new signalR.HubConnectionBuilder()
                 .withUrl('/messages')
@@ -128,6 +130,12 @@ function NotificationsContainer({ displayCnt }) {
                 });
         });
 
+        return () => {
+            if (connection) {
+                connection.stop();
+            }
+        }
+
     }, []);
 
     useEffect(() => {
@@ -139,23 +147,26 @@ function NotificationsContainer({ displayCnt }) {
 
         connection.start()
             .then(() => {
-                console.log('Notification connection established.')
+                console.log('Notification connection established.');
+
+                connection.on('ReceiveNotification', notification => {
+                    console.log(' *** received notification *** ');
+                    console.log(notification);
+
+                    const index = Math.ceil(state.currentCount / displayCnt) + 1;
+                    const url = '/Notification/LoadNotifications';
+
+                    dispatch({ type: 'PREPEND_NOTIFICATIONS', payload: { list: [notification] } });
+                    dispatch({ type: 'UPDATE_COUNT', payload: { increase: 1 } });
+                });
+
             })
             .catch(error => {
                 console.log('An error occurred at: connection.start()');
                 console.error(error.toString());
             });
 
-        connection.on('ReceiveNotification', notification => {
-            console.log(' *** received notification *** ');
-            console.log(notification);
-
-            const index = Math.ceil(state.currentCount / displayCnt) + 1;
-            const url = '/Notification/LoadNotifications';
-
-            dispatch({ type: 'PREPEND_NOTIFICATIONS', payload: { list: [notification] } });
-            dispatch({ type: 'UPDATE_COUNT', payload: { increase: 1 } });
-        })
+        
     }, [connection]);
 
     return (

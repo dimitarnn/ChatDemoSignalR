@@ -156,6 +156,12 @@ namespace ChatDemoSignalR.Migrations
                         .HasColumnType("int")
                         .UseIdentityColumn();
 
+                    b.Property<string>("Exception")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Level")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Message")
                         .HasColumnType("nvarchar(max)");
 
@@ -471,11 +477,13 @@ namespace ChatDemoSignalR.Migrations
                 {
                     b.HasOne("ChatDemoSignalR.Models.User", "Sender")
                         .WithMany()
-                        .HasForeignKey("SenderId");
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("ChatDemoSignalR.Models.User", "User")
                         .WithMany("FriendRequests")
-                        .HasForeignKey("UserId");
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Sender");
 
@@ -487,7 +495,7 @@ namespace ChatDemoSignalR.Migrations
                     b.HasOne("ChatDemoSignalR.Models.User", "Creator")
                         .WithMany("Images")
                         .HasForeignKey("CreatorId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Creator");
@@ -498,12 +506,13 @@ namespace ChatDemoSignalR.Migrations
                     b.HasOne("ChatDemoSignalR.Models.ChatRoom", "ChatRoom")
                         .WithMany("JoinRoomRequests")
                         .HasForeignKey("ChatRoomId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("ChatDemoSignalR.Models.User", "User")
                         .WithMany("JoinRoomRequests")
-                        .HasForeignKey("UserId");
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("ChatRoom");
 
@@ -514,18 +523,21 @@ namespace ChatDemoSignalR.Migrations
                 {
                     b.HasOne("ChatDemoSignalR.Models.ChatRoom", null)
                         .WithMany("Messages")
-                        .HasForeignKey("ChatRoomId");
+                        .HasForeignKey("ChatRoomId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("ChatDemoSignalR.Models.User", null)
                         .WithMany("Messages")
-                        .HasForeignKey("UserId");
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("ChatDemoSignalR.Models.Notification", b =>
                 {
                     b.HasOne("ChatDemoSignalR.Models.User", "User")
                         .WithMany("Notifications")
-                        .HasForeignKey("UserId");
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("User");
                 });
@@ -554,13 +566,13 @@ namespace ChatDemoSignalR.Migrations
                     b.HasOne("ChatDemoSignalR.Models.ChatRoom", null)
                         .WithMany()
                         .HasForeignKey("ChatRoomsId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("ChatDemoSignalR.Models.User", null)
                         .WithMany()
                         .HasForeignKey("UsersId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
@@ -569,7 +581,7 @@ namespace ChatDemoSignalR.Migrations
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
@@ -578,7 +590,7 @@ namespace ChatDemoSignalR.Migrations
                     b.HasOne("ChatDemoSignalR.Models.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
@@ -587,7 +599,7 @@ namespace ChatDemoSignalR.Migrations
                     b.HasOne("ChatDemoSignalR.Models.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
@@ -596,13 +608,13 @@ namespace ChatDemoSignalR.Migrations
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("ChatDemoSignalR.Models.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
@@ -611,7 +623,7 @@ namespace ChatDemoSignalR.Migrations
                     b.HasOne("ChatDemoSignalR.Models.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 

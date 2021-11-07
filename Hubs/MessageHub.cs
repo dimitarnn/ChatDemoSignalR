@@ -22,6 +22,11 @@ namespace ChatDemoSignalR.Hubs
         {
             _unitOfWork = unitOfWork;
         }
+        
+        public async Task SendTestMessage(string user, string message)
+        {
+            await Clients.All.SendAsync("ReceiveMessage", user, message);
+        }
 
         public async Task SendNotificationToGroup(string group, Notification notification)
         {

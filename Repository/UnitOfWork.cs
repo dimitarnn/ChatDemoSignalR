@@ -20,15 +20,24 @@ namespace ChatDemoSignalR.Repository
             FriendRequests = new FriendRequestRepository(_context);
             JoinRoomRequests = new JoinRoomRequestRepository(_context);
             Images = new ImageRepository(_context);
+            LogEvents = new LogEventRepository(_context);
         }
 
         public IChatRepository ChatRooms { get; private set; }
+
         public IUserRepository Users { get; private set; }
+
         public IMessageRepository Messages { get; private set; }
+
         public INotificationRepository Notifications { get; private set; }
+
         public IFriendRequestRepository FriendRequests { get; private set; }
+
         public IJoinRoomRequestRepository JoinRoomRequests { get; private set; }
+
         public IImageRepository Images { get; private set; }
+
+        public ILogEventRepository LogEvents { get; private set; }
 
         public async Task<int> Complete()
         {

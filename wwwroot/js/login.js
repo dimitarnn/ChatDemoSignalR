@@ -5,6 +5,7 @@ import Alert from './Alert';
 
 var root = document.getElementById('root');
 const defaultErrorMessage = 'An error occurred!';
+const defaultReturnUrl = '/Home/Index';
 
 const Login = () => {
     const [state, setState] = useState({
@@ -16,6 +17,7 @@ const Login = () => {
     const [serverError, setServerError] = useState(false);
     const [serverErrorMessages, setServerErrorMessages] = useState([]);
     const [loggedIn, setLoggedIn] = useState(false);
+    const [returnUrl, setReturnUrl] = useState(defaultReturnUrl);
 
     const handleChange = event => {
         setState({ ...state, [event.target.name]: event.target.value });
@@ -63,18 +65,32 @@ const Login = () => {
             return;
         }
 
+        setReturnUrl(defaultReturnUrl);
         setSuccess(true);
         const url = '/Account/Login';
+
+        const search = window.location.search;
+        console.log('search: ' + search);
+        const urlParams = new URLSearchParams(search);
+        console.log('params: ' + urlParams);
+        const redirect = urlParams.get('ReturnUrl');
+        console.log('redirect: ' + redirect);
 
         axios.post(url, null, {
             params: {
                 username: state.username,
-                password: state.password
+                password: state.password,
+                returnUrl: redirect
             }
         })
             .then(response => response.data)
-            .then(() => {
+            .then(redirect => {
                 setLoggedIn(true);
+                console.log('logged: ' + redirect);
+
+                if (redirect !== null && redirect.length !== 0) {
+                    setReturnUrl(redirect);
+                }
             })
             .catch(error => {
                 console.log('error: ');
@@ -108,7 +124,7 @@ const Login = () => {
         return (
             <div className='center-div'>
                 <Alert type='success' message='Successfully logged in!' />
-                <a href='/Home/Index' className='btn-success'>Continue</a>
+                <a href={ returnUrl } className='btn-success'>Continue</a>
             </div>
         );
     }

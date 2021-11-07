@@ -11,6 +11,7 @@ using Serilog;
 
 namespace ChatDemoSignalR.Controllers
 {
+    [Authorize]
     public class FileController : Controller
     {
         private IConfiguration _configuration;
@@ -26,7 +27,6 @@ namespace ChatDemoSignalR.Controllers
             _responseData = new Response();
         }
 
-        [Authorize]
         public IActionResult Index()
         {
             return View();

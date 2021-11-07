@@ -21,6 +21,8 @@ namespace ChatDemoSignalR.Repository
 
         IImageRepository Images { get; }
 
+        ILogEventRepository LogEvents { get; }
+
         Task<int> Complete();
     }
 }

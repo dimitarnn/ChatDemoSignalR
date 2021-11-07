@@ -10,6 +10,7 @@ using ChatDemoSignalR.Repository;
 using ChatDemoSignalR.Services;
 using ChatDemoSignalR.Settings;
 using ChatDemoSignalR.Validators;
+using ChatDemoSignalR.ViewModels;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Builder;
@@ -36,6 +37,7 @@ namespace ChatDemoSignalR
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllersWithViews();
+
             services.AddMvc()
                     .AddFluentValidation();
 
@@ -43,6 +45,7 @@ namespace ChatDemoSignalR
             {
                 options.EnableDetailedErrors = true;
             });
+
 
             services.Configure<MailSettings>(Configuration.GetSection("MailSettings"));
 
@@ -63,10 +66,14 @@ namespace ChatDemoSignalR
             services.AddScoped<IMessageRepository, MessageRepository>();
             services.AddScoped<INotificationRepository, NotificationRepository>();
             services.AddScoped<IFriendRequestRepository, FriendRequestRepository>();
+            services.AddScoped<ILogEventRepository, LogEventRepository>();
+            services.AddScoped<IImageRepository, ImageRepository>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddTransient<IMailService, MailService>();
             services.AddTransient<IValidator<User>, UserValidator>();
             services.AddTransient<IValidator<ChatRoom>, ChatRoomValidator>();
+            services.AddTransient<IValidator<CreateRoleVM>, CreateRoleValidator>();
+            services.AddTransient<IValidator<EditRoleVM>, EditRoleValidator>();
             services.AddTransient<IImageService, ImageService>();
         }
 
@@ -101,6 +108,7 @@ namespace ChatDemoSignalR
                     name: "default",
                     pattern: "{controller=Home}/{action=Index}/{id?}");
                 endpoints.MapHub<MessageHub>("/messages");
+                endpoints.MapHub<TestHub>("/testhub");
             });
         }
     }

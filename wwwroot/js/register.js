@@ -29,7 +29,7 @@ const RegisterForm = () => {
         } else if (state.username.length <= 1) {
             errors.username = 'Username must be at least 2 characters long!';
         } else if (state.username.length > 150) {
-            errors.username = 'Username must be less than 150 characters!';
+            errors.username = 'Username must be under 150 characters!';
         }
 
         if (state.email.length === 0) {
@@ -167,17 +167,17 @@ const RegisterForm = () => {
     }
     return (
         <div className='center-div'>
-            <h2 className='register'>Register</h2>
+            <h2 className='title'>Register</h2>
 
             <form onSubmit={handleSubmit}>
                 {
-                    (success && !serverError) && <Alert type='success' message='Form sent successfully!' />
+                    (success && !serverError) && <Alert type='success' message='Sent successfully!' />
                 }
                 {
                     serverError ?
                         <div>
                             {
-                                serverErrorMessages.map(error => <Alert type='error' message={error} />)
+                                serverErrorMessages.map((error, step) => <Alert key={step} type='error' message={error} />)
                             }
                         </div> :
                         null

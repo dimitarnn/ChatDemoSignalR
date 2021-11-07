@@ -20,6 +20,8 @@ namespace ChatDemoSignalR.Validators
             RuleFor(user => user.FirstName).NotEmpty().Length(2, 150).WithName("First Name");
             RuleFor(user => user.LastName).NotEmpty().Length(2, 150).WithName("Last name");
             RuleFor(user => user.Email).NotEmpty().EmailAddress();
+            RuleFor(user => user.RoomsLimit).InclusiveBetween(1, 10000);
+            RuleFor(user => user.FriendsLimit).InclusiveBetween(1, 10000);
 
             RuleSet("FriendsLimit", () =>
             {

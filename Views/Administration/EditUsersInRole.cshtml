@@ -1,0 +1,11 @@
+﻿@model RoleVM
+
+<div id="root"></div>
+
+@section Scripts
+{
+    <script>
+        const _roleId = @Html.Raw(Json.Serialize(Model.RoleId));
+    </script>
+    <script src="~/js/dist/editUsersInRole.bundle.js"></script>
+}

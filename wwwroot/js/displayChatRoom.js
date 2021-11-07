@@ -493,6 +493,7 @@ function Page({ displayName }) {
             });
 
         state.connection.on('ReceiveMessage', message => {
+            console.log('*********** Message received');
             const height = $('#messages')[0].scrollHeight;
             const isScrolled = height - Math.abs($('#messages')[0].scrollTop) === $('#messages')[0].clientHeight;
             const scrollType = isScrolled ? 1 : 0;
