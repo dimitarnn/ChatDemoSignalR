@@ -81,6 +81,8 @@ function App() {
                 .then(() => {
                     console.log('Connection established!');
 
+                    //connection.invoke("AddToGroup");
+
                     connection.on('ReceiveMessage', (user, message) => {
 
                         const newMessageObj = {
@@ -88,8 +90,8 @@ function App() {
                             text: message
                         };
                         setMessages(prev => [...prev, newMessageObj]);
-
                     });
+
                 })
                 .catch(error => {
                     console.error(error.toString());
@@ -109,11 +111,23 @@ function App() {
         }
     }
 
+    const joinGroup = () => {
+        if (connection.connectionStarted) {
+            try {
+                connection.invoke('JoinGroup');
+            }
+            catch (error) {
+                console.error(error.toString());
+            }
+        }
+    }
+
     return (
         <div>
             <h1>React SignalR #Last Update 21:22 06.10</h1>
             <Input handleSubmit={handleSubmit} />
             <h4>Messages:</h4>
+            <button onClick={joinGroup}>Join Group "TestGroup"</button>
             <MessagesContainer messages={messages} />
         </div>
     );

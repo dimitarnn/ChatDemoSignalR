@@ -4,6 +4,7 @@ module.exports = {
     mode: 'production',
     entry: {
         main: './wwwroot/js/app.js',
+        testScript: './wwwroot/js/testScript.js',
         displayAllPrivateChats: './wwwroot/js/displayAllPrivateChats.js',
         displayChatRoom: './wwwroot/js/displayChatRoom.js',
         notifications: './wwwroot/js/notificationsScript.js',

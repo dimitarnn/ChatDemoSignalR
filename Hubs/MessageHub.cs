@@ -22,7 +22,7 @@ namespace ChatDemoSignalR.Hubs
         {
             _unitOfWork = unitOfWork;
         }
-        
+
         public async Task SendTestMessage(string user, string message)
         {
             await Clients.All.SendAsync("ReceiveMessage", user, message);
@@ -92,7 +92,7 @@ namespace ChatDemoSignalR.Hubs
             var connections = _connections.GetAllConnections().ToList();
             await Clients.Clients(connections).SendAsync("ReceiveMessage", message);
         }
-        
+
         public async Task SendMessageToAll(Message message)
         {
             await Clients.All.SendAsync("ReceiveMessage", message);
@@ -102,7 +102,7 @@ namespace ChatDemoSignalR.Hubs
         {
             await Clients.Caller.SendAsync("ReceiveMessage", message);
         }
-        
+
         public async Task SendMessageToConnection(string connectionId, Message message)
         {
             await Clients.Client(connectionId).SendAsync("ReceiveMessage", message);

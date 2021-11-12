@@ -58,10 +58,12 @@ namespace ChatDemoSignalR
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
+                //.UseSystemd()
                 .UseSerilog()
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();
+                        //.UseUrls("" + Environment.GetEnvironmentVariable("PORT"));
                 });
     }
 }

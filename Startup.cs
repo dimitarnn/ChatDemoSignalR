@@ -15,6 +15,7 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -80,10 +81,15 @@ namespace ChatDemoSignalR
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            //if (env.IsDevelopment())
+            //app.UseForwardedHeaders(new ForwardedHeadersOptions
             //{
-            //    app.UseDeveloperExceptionPage();
-            //}
+            //    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+            //});
+
+            if (env.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
             //else
             //{
             //    app.UseExceptionHandler("/Home/Error");
@@ -92,6 +98,7 @@ namespace ChatDemoSignalR
             //}
 
             //app.UseDeveloperExceptionPage();
+
             app.UseMiddleware<ErrorHandlerMiddleware>();
 
             app.UseHttpsRedirection();
@@ -108,7 +115,7 @@ namespace ChatDemoSignalR
                     name: "default",
                     pattern: "{controller=Home}/{action=Index}/{id?}");
                 endpoints.MapHub<MessageHub>("/messages");
-                endpoints.MapHub<TestHub>("/testhub");
+                //endpoints.MapHub<TestHub>("/testhub");
             });
         }
     }

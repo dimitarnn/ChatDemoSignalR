@@ -10,12 +10,13 @@ namespace ChatDemoSignalR.Hubs
     {
         public async Task SendMessage(string user, string message)
         {
-            await Clients.All.SendAsync("ReceiveMessage", user, message);
+            //await Clients.All.SendAsync("ReceiveMessage", user, message);
+            await Clients.Group("TestGroup").SendAsync("ReceiveMessage", user, message);
         }
 
-        public override async Task OnConnectedAsync()
+        public async Task JoinGroup()
         {
-            await base.OnConnectedAsync();
+            await Groups.AddToGroupAsync(Context.ConnectionId, "TestGroup");
         }
     }
 }

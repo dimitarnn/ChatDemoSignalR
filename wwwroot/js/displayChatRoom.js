@@ -129,7 +129,7 @@ function ScrollDownButton() {
     // const style = { isVisible ? { visibility: visible } : { visibility: hidden} }; 
 
     return (
-        <button id="scroll-down-button" style={{ display: (visible ? 'block' : 'none' ) }} onClick={handleClick}>Go back</button>
+        <button id="scroll-down-button" style={{ display: (visible ? 'block' : 'none') }} onClick={handleClick}>Go back</button>
     );
 }
 
@@ -301,30 +301,30 @@ function Messages({ displayCnt, updateMessages, messages }) {
             }
             {
                 loading ? <div>Loading...</div> :
-                messages.map(message => {
-                    const color = message.sender === 'John Cena' ? '#d15d30' : (message.sender === _user ? '#e053b3' : '#159ea5');
-                    let id = message.id;
-                    //const display_time = moment(message.sendTime).format('Do MMM hh:mm');
-                    let display_time = '';
+                    messages.map(message => {
+                        const color = message.sender === 'John Cena' ? '#d15d30' : (message.sender === _user ? '#e053b3' : '#159ea5');
+                        let id = message.id;
+                        //const display_time = moment(message.sendTime).format('Do MMM hh:mm');
+                        let display_time = '';
 
-                    //display_time = moment(message.sendTime).format('Do MMM HH:mm');
-                    display_time = DateTime.fromISO(message.sendTime).toFormat('d MMM HH:mm');
+                        //display_time = moment(message.sendTime).format('Do MMM HH:mm');
+                        display_time = DateTime.fromISO(message.sendTime).toFormat('d MMM HH:mm');
 
-                    if (id == undefined || id == null || id == 0) {
-                        id = message.sendTime + '_' + message.sender;
-                    }
+                        if (id == undefined || id == null || id == 0) {
+                            id = message.sendTime + '_' + message.sender;
+                        }
 
-                    return (
-                        <Message
-                            key={id}
-                            //sendTime={formatDate(message.sendTime, isFullDate)}
-                            sendTime={display_time}
-                            color={color}
-                            sender={message.sender}
-                            text={message.text}
-                        />
-                    );
-                })
+                        return (
+                            <Message
+                                key={id}
+                                //sendTime={formatDate(message.sendTime, isFullDate)}
+                                sendTime={display_time}
+                                color={color}
+                                sender={message.sender}
+                                text={message.text}
+                            />
+                        );
+                    })
             }
         </div>
     );
@@ -411,14 +411,16 @@ function Page({ displayName }) {
     }
 
     useEffect(() => {
+        console.log('message received...');
+        console.log('scroll type: ' + state.scrollType);
 
-        if (state.scrollType == 0)
+        if (state.scrollType === 0)
             return;
 
-        if (state.scrollType == 1) {
+        if (state.scrollType === 1) {
             $('#messages').animate({ scrollTop: $('#messages')[0].scrollHeight }, 500);
         }
-        else if (state.scrollType == 2){
+        else if (state.scrollType === 2) {
             scrollAfterUpdate();
         }
 
@@ -495,8 +497,20 @@ function Page({ displayName }) {
         state.connection.on('ReceiveMessage', message => {
             console.log('*********** Message received');
             const height = $('#messages')[0].scrollHeight;
-            const isScrolled = height - Math.abs($('#messages')[0].scrollTop) === $('#messages')[0].clientHeight;
+            const clientHeight = $('#messages')[0].clientHeight;
+            const remainder = height - Math.abs($('#messages')[0].scrollTop);
+
+            //const isScrolled = height - Math.abs($('#messages')[0].scrollTop) === $('#messages')[0].clientHeight;
+            const diff = (1.0 * remainder / clientHeight);
+            const isScrolled = diff <= 1.2;
             const scrollType = isScrolled ? 1 : 0;
+
+            console.log('height: ' + height);
+            console.log('scrollTop: ' + Math.abs($('#messages')[0].scrollTop));
+            console.log('clientHeight: ' + $('#messages')[0].clientHeight);
+            console.log('remainder: ' + remainder);
+            console.log('diff: ' + diff);
+
             dispatch({
                 type: 'APPEND_MESSAGES',
                 payload: {

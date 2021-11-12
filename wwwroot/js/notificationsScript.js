@@ -93,7 +93,7 @@ function NotificationsContainer({ displayCnt }) {
         } finally {
             console.log('connection built.');
         }
-        
+
 
         // loading notifications
         import('axios').then(({ default: axios }) => {
@@ -166,7 +166,7 @@ function NotificationsContainer({ displayCnt }) {
                 console.error(error.toString());
             });
 
-        
+
     }, [connection]);
 
     return (
