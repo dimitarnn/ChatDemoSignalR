@@ -183,7 +183,7 @@ namespace ChatDemoSignalR.Hubs
                 _connections.Remove(username, Context.ConnectionId);
             }
 
-            await Clients.All.SendAsync("UserDisconnected", Context.ConnectionId);
+            //await Clients.All.SendAsync("UserDisconnected", Context.ConnectionId);
             await base.OnDisconnectedAsync(ex);
         }
     }

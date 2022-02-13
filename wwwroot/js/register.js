@@ -122,7 +122,12 @@ const RegisterForm = () => {
                 let errorMessage = defaultErrorMessage;
                 if (error.response && error.response.data.length !== 0) {
                     let serverErrors = error.response.data;
-                    setServerErrorMessages(prev => [...prev, ...serverErrors]);
+                    if (typeof (serverErrors) == "string") {
+                        setServerErrorMessages(prev => [...prev, serverErrors]);
+                    }
+                    else {
+                        setServerErrorMessages(prev => [...prev, ...serverErrors]);
+                    }
                 }
                 else {
                     setServerErrorMessages(prev => [...prev, errorMessage]);

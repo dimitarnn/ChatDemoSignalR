@@ -134,14 +134,14 @@ namespace ChatDemoSignalR.Controllers
             if (list.Count == 0)
             {
                 user.Following.Add(friends1);
-                user.FollowedBy.Add(friends2);
+                //user.FollowedBy.Add(friends2);
             }
 
             list = friend.Following.Where(x => x.FriendId == user.Id).ToList();
             if (list.Count == 0)
             {
                 friend.Following.Add(friends2);
-                friend.FollowedBy.Add(friends1);
+                //friend.FollowedBy.Add(friends1);
             }
 
             await _unitOfWork.Complete();

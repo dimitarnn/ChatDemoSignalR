@@ -93,7 +93,7 @@ namespace ChatDemoSignalR.Controllers
         {
             User user = await _userManager.GetUserAsync(User);
             string currentUser = (user == null ? "Anonymous" : user.UserName);
-            Log.Information("[CUSTOM] User {User} visited /Chat/DisplayRooms at {Now} Thread {Thread}", currentUser, DateTime.Now, Thread.CurrentThread.ManagedThreadId);
+            //Log.Information("[CUSTOM] User {User} visited /Chat/DisplayRooms at {Now} Thread {Thread}", currentUser, DateTime.Now, Thread.CurrentThread.ManagedThreadId);
             List<ChatRoom> rooms = (await _unitOfWork.ChatRooms.GetAllChatRooms()).ToList();
             return View(rooms);
         }

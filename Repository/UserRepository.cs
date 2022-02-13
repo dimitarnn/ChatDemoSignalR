@@ -29,7 +29,7 @@ namespace ChatDemoSignalR.Repository
         public async Task<User> GetUserWithFollowedAndFollowing(string id)
         {
             return await AppDbContext.Users
-                .Include(x => x.FollowedBy)
+                //.Include(x => x.FollowedBy)
                 .Include(x => x.Following)
                 .SingleOrDefaultAsync(x => x.Id == id);
         }
@@ -87,7 +87,7 @@ namespace ChatDemoSignalR.Repository
         {
             return await AppDbContext.Users
                 .Include(x => x.Following)
-                .Include(x => x.FollowedBy)
+                //.Include(x => x.FollowedBy)
                 .Where(x => x.Id == id)
                 .ToListAsync();
         }

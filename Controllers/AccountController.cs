@@ -217,13 +217,13 @@ namespace ChatDemoSignalR.Controllers
                 if (!user.Following.Contains(friends1))
                 {
                     user.Following.Add(friends1);
-                    user.FollowedBy.Add(friends2);
+                    //user.FollowedBy.Add(friends2);
                 }
 
                 if (!friend.Following.Contains(friends2))
                 {
                     friend.Following.Add(friends2);
-                    friend.FollowedBy.Add(friends1);
+                    //friend.FollowedBy.Add(friends1);
                 }
 
                 int cmp = String.Compare(user.Id, friend.Id);

@@ -37,7 +37,7 @@ namespace ChatDemoSignalR.Models
 
         public ICollection<UserFriends> Following { get; set; }
 
-        public ICollection<UserFriends> FollowedBy { get; set; }
+        //public ICollection<UserFriends> FollowedBy { get; set; }
 
         public ICollection<Notification> Notifications { get; set; }
 

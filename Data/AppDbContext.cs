@@ -45,11 +45,17 @@ namespace ChatDemoSignalR.Data
             builder.Entity<UserFriends>()
                 .HasKey(uf => new { uf.UserId, uf.FriendId });
 
-            builder.Entity<UserFriends>()
-                .HasOne(uf => uf.Friend)
-                .WithMany(fr => fr.FollowedBy)
-                .HasForeignKey(fr => fr.FriendId)
-                .OnDelete(DeleteBehavior.Restrict);
+            //builder.Entity<UserFriends>()
+            //    .HasOne(uf => uf.Friend)
+            //    .WithMany(fr => fr.FollowedBy)
+            //    .HasForeignKey(fr => fr.FriendId)
+            //    .OnDelete(DeleteBehavior.Restrict);
+
+            //builder.Entity<UserFriends>()
+            //    .HasOne(uf => uf.Friend)
+            //    .WithMany(fr => fr.Following)
+            //    .HasForeignKey(fr => fr.FriendId)
+            //    .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<UserFriends>()
                 .HasOne(uf => uf.User)

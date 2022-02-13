@@ -37,9 +37,9 @@ namespace ChatDemoSignalR.Controllers
 
         public IActionResult Index()
         {
-            List<LogEvent> events = _context.LogEvents.ToList();
+            //List<LogEvent> events = _context.LogEvents.ToList();
 
-            Log.Information("User with Thread {Thread} visited /Home/Index at {Now}", Thread.CurrentThread.ManagedThreadId, DateTime.Now);
+            //Log.Information("User with Thread {Thread} visited /Home/Index at {Now}", Thread.CurrentThread.ManagedThreadId, DateTime.Now);
             return View();
         }
 
